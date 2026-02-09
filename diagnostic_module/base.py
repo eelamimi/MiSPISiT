@@ -360,7 +360,7 @@ class DiagnosticModule:
     #     self.save_results(student_id, section, s_complexity, results['POL'], results['CHL'], results['UMN'])
     #     return results
 
-    def get_metric_by_section_and_student_id(self, student_id, metric, section):
+    def get_metric_by_section_and_student_id(self, student_id, metric, section) -> float:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute(
@@ -370,9 +370,13 @@ class DiagnosticModule:
             WHERE `student_id`=? AND `section`=?
             GROUP BY `section`
             ''', (student_id, section))
-        r = cursor.fetchone()[0 if metric == 'POL' else 1 if metric == 'CHL' else 2]
+        row: list[float, float, float] = cursor.fetchone()
+        if row is not None:
+            metric_from_db = row[0 if metric == 'POL' else 1 if metric == 'CHL' else 2]
+        else:
+            metric_from_db = 0
         conn.close()
-        return r
+        return metric_from_db
 
     def save_results(self, student_id, section, s_complexity, pol, chl, umn):
         conn = sqlite3.connect(self.db_name)
