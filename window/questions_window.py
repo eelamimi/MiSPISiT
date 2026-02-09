@@ -1,9 +1,12 @@
+import asyncio
+import threading
 import tkinter as tk
 from tkinter import messagebox as mb
 
 from .base import ChildWindow
 from model.question import Question
 
+TIMER = 90
 
 class QuestionsWindow(ChildWindow):
     def __init__(self, parent, questions: list[Question], w=300, h=400):
@@ -15,13 +18,15 @@ class QuestionsWindow(ChildWindow):
         self.option = tk.IntVar(value=1)
         self.correct_answers = 0
         self.len = len(questions)
+        self.timer_active = False
+        self.current_loop = None
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(10, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(3, weight=1)
 
-        self.timer = tk.Label(self, text="90")
+        self.timer = tk.Label(self, text=str(TIMER))
         self.timer.grid(row=1, column=1, columnspan=2, pady=20)
 
         self.title_label = tk.Label(self)
@@ -41,6 +46,33 @@ class QuestionsWindow(ChildWindow):
         self.next_q_btn.grid(row=7, column=2, pady=10)
 
         self.__update_q()
+        self.__start_timer()
+
+    async def __countdown_timer(self):
+        for i in range(TIMER - 1):
+            await asyncio.sleep(1)
+            if not self.timer_active or self.timer['text'] == '0':
+                break
+            self.after(0, lambda l=self.timer: l.config(text=str(int(self.timer['text']) - 1)))
+
+        if self.timer_active:
+            self.after(0, lambda: self.__stop_test())
+
+    def __start_timer(self):
+        self.timer_active = True
+        loop = asyncio.new_event_loop()
+        self.current_loop = loop
+        asyncio.set_event_loop(loop)
+        thread = threading.Thread(target=loop.run_forever)
+        thread.daemon = True
+        thread.start()
+        asyncio.run_coroutine_threadsafe(self.__countdown_timer(), loop)
+
+    def __stop_timer(self):
+        self.timer_active = False
+        if self.current_loop:
+            self.current_loop.call_soon_threadsafe(self.current_loop.stop)
+            self.current_loop = None
 
     def __update_width(self):
         self.update_idletasks()
@@ -73,14 +105,15 @@ class QuestionsWindow(ChildWindow):
         self.__update_q()
 
     def __stop_test(self):
+        self.__stop_timer()
         self.__is_correct_answer()
         self.__save_test()
         mb.showinfo(
             title=f"Результат {self.type}",
             message=f"Правильных ответов: {self.correct_answers}\n"
                     f"Неправильных ответов: {self.len - self.correct_answers}\n\n"
-                    f"Баллов: {round(self.correct_answers / 3 * 10)}")
+                    f"Баллов: {round(self.correct_answers / 3 * 10) / 10}")
         self.return_to_main_to_main()
 
     def __save_test(self):
-        self.parent.save_results(self.correct_answers / 3 * 10, self.type)
+        self.parent.save_results(round(self.correct_answers / 3 * 10) / 10, self.type)
