@@ -82,6 +82,10 @@ class Test(ChildWindow):
         else:
             full_section = "РД " + self.section_entry.get() + '.' + self.subsection_entry.get() + '.'
 
+        result_of_metric = self.module.get_metric_by_section_and_student_id(student_id, metric, full_section)
+        if (result_of_metric + result) > 1:
+            result = 1
+
         pol = chl = umn = 0
         if metric == 'POL':
             pol = result

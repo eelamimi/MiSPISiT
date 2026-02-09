@@ -360,6 +360,20 @@ class DiagnosticModule:
     #     self.save_results(student_id, section, s_complexity, results['POL'], results['CHL'], results['UMN'])
     #     return results
 
+    def get_metric_by_section_and_student_id(self, student_id, metric, section):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            SELECT sum(pol), sum(chl), sum(umn) 
+            FROM Results 
+            WHERE `student_id`=? AND `section`=?
+            GROUP BY `section`
+            ''', (student_id, section))
+        r = cursor.fetchone()[0 if metric == 'POL' else 1 if metric == 'CHL' else 2]
+        conn.close()
+        return r
+
     def save_results(self, student_id, section, s_complexity, pol, chl, umn):
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
