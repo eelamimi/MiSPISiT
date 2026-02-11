@@ -13,7 +13,7 @@ class Test(ChildWindow):
         self.module = module
 
         self.grid_rowconfigure(0, weight=1)
-        self.grid_rowconfigure(9, weight=1)
+        self.grid_rowconfigure(8, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0)
         self.grid_columnconfigure(2, weight=0)
@@ -44,30 +44,25 @@ class Test(ChildWindow):
         self.subsection_entry = ttk.Entry(self)
         self.subsection_entry.grid(row=4, column=2, pady=10, padx=5, sticky='ew')
 
-        self.complexity_label = ttk.Label(self, text="Сложность:", anchor='e')
-        self.complexity_label.grid(row=5, column=1, pady=10, padx=5, sticky='ew')
-        self.complexity_entry = ttk.Entry(self)
-        self.complexity_entry.grid(row=5, column=2, pady=10, padx=5, sticky='ew')
-
         self.metric_label = ttk.Label(self, text="Метрика:", anchor='e')
-        self.metric_label.grid(row=6, column=1, pady=10, padx=5, sticky='ew')
+        self.metric_label.grid(row=5, column=1, pady=10, padx=5, sticky='ew')
         self.metric_combobox = ttk.Combobox(self, values=['POL', 'CHL', 'UMN'], state='readonly', width=17)
         self.metric_combobox.set('POL')
-        self.metric_combobox.grid(row=6, column=2, pady=10, padx=5, sticky='ew')
+        self.metric_combobox.grid(row=5, column=2, pady=10, padx=5, sticky='ew')
 
         self.start_test_button = tk.Button(self, text="Начать тестирование", command=self.start_test_action)
-        self.start_test_button.grid(row=7, column=1, columnspan=2, pady=(20, 0))
+        self.start_test_button.grid(row=6, column=1, columnspan=2, pady=(20, 0))
 
         self.exit_button = tk.Button(self, text="Назад", command=self.return_to_main)
-        self.exit_button.grid(row=8, column=1, columnspan=2, pady=10)
+        self.exit_button.grid(row=7, column=1, columnspan=2, pady=10)
 
     def start_test_action(self):
-        result_of_validation, message, values = self.__validate_entries()
+        result_of_validation, message, metric = self.__validate_entries()
         if not result_of_validation:
             messagebox.showerror("Ошибка", message)
             return
         self.withdraw()
-        questions = self.module.generate_test(values[-1])
+        questions = self.module.generate_test(metric)
         questions_window = QuestionsWindow(self, questions, 300, 650)
         questions_window.show()
 
@@ -93,10 +88,9 @@ class Test(ChildWindow):
             chl = result
         else:
             umn = result
-        self.module.save_results(student_id, full_section, int(self.complexity_entry.get()), pol, chl, umn)
+        self.module.save_results(student_id, full_section, 1, pol, chl, umn)
 
-    def __validate_entries(self) -> tuple[bool, str, list]:
-        values = list()
+    def __validate_entries(self) -> tuple[bool, str, str]:
         message = "Некорректно введена фамилия"
         try:
             if not self.student_entry.get().strip().isalpha():
@@ -105,24 +99,14 @@ class Test(ChildWindow):
             raw_section = self.section_entry.get()
             if raw_section == "":
                 raise ValueError()
-            values.append(int(raw_section))
             message = "Некорректно введён подраздел, используйте числа"
             raw_subsection = self.subsection_entry.get()
             if raw_subsection == "":
                 raise ValueError()
-            values.append(int(raw_subsection))
             message = "Некорректно введена сложность, используйте числа"
-            raw_complexity = self.complexity_entry.get()
-            if raw_complexity == "":
-                raise ValueError()
-            values.append(complexity := int(raw_complexity))
-            if complexity not in (complexities := self.module.get_complexities()[metric := self.metric_combobox.get()]):
-                message = f"Для метрики {metric} сложности {complexity} нет. Есть сложности: {', '.join(map(str, complexities))}"
-                raise ValueError()
-            values.append(metric)
-            return True, "", values
+            return True, "", self.metric_combobox.get()
         except ValueError:
-            return False, message, []
+            return False, message, ""
 
     def __lock_section(self):
         self.section_entry.config(state='disabled')

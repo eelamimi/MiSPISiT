@@ -3,10 +3,9 @@ import threading
 import tkinter as tk
 from tkinter import messagebox as mb
 
-from .base import ChildWindow
 from model.question import Question
+from .base import ChildWindow
 
-TIMER = 90
 
 class QuestionsWindow(ChildWindow):
     def __init__(self, parent, questions: list[Question], w=300, h=400):
@@ -20,14 +19,15 @@ class QuestionsWindow(ChildWindow):
         self.len = len(questions)
         self.timer_active = False
         self.current_loop = None
+        self.timer = self.current_q.difficulty + self.index + 1
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(10, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(3, weight=1)
 
-        self.timer = tk.Label(self, text=str(TIMER))
-        self.timer.grid(row=1, column=1, columnspan=2, pady=20)
+        self.timer_label = tk.Label(self, text=str(self.timer))
+        self.timer_label.grid(row=1, column=1, columnspan=2, pady=20)
 
         self.title_label = tk.Label(self)
         self.title_label.grid(row=2, column=1, columnspan=2, pady=10)
@@ -49,14 +49,14 @@ class QuestionsWindow(ChildWindow):
         self.__start_timer()
 
     async def __countdown_timer(self):
-        for i in range(TIMER - 1):
+        for i in range(self.timer):
             await asyncio.sleep(1)
-            if not self.timer_active or self.timer['text'] == '0':
+            if not self.timer_active or self.timer_label['text'] == '0':
                 break
-            self.after(0, lambda l=self.timer: l.config(text=str(int(self.timer['text']) - 1)))
+            self.after(0, lambda l=self.timer_label: l.config(text=str(int(self.timer_label['text']) - 1)))
 
         if self.timer_active:
-            self.after(0, lambda: self.__stop_test())
+            self.after(0, lambda: self.__next_q())
 
     def __start_timer(self):
         self.timer_active = True
@@ -84,6 +84,7 @@ class QuestionsWindow(ChildWindow):
         if self.index < (self.len - 1):
             self.index += 1
             self.current_q = self.questions[self.index]
+        self.timer = self.current_q.difficulty + self.index + 1
 
     def __update_q(self):
         self.title_label.config(text=f"№ {self.index + 1}\tТип: {self.type}")
@@ -100,9 +101,15 @@ class QuestionsWindow(ChildWindow):
             self.correct_answers += 1
 
     def __next_q(self):
+        self.__stop_timer()
+        if self.index == (self.len - 1):
+            self.__stop_test()
+            return
         self.__is_correct_answer()
         self.__increment_index()
+        self.timer_label.config(text=str(self.timer))
         self.__update_q()
+        self.__start_timer()
 
     def __stop_test(self):
         self.__stop_timer()
