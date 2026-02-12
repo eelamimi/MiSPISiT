@@ -321,6 +321,7 @@ class DiagnosticModule:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', results)
 
     def generate_test(self, question_type) -> list[Question]:
+        # TODO добавить difficulty в окно тестирования и потом заменить сохранение теста
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         questions = []
