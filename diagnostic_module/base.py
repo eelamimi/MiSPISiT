@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 
 from model.question import Question
-
+from model.result import Result
 
 class DiagnosticModule:
     def __init__(self, db_name='education.db', init_database=False):
@@ -40,7 +40,6 @@ class DiagnosticModule:
                 `options` JSON NOT NULL,
                 `correct_answer` INTEGER NOT NULL,
                 `difficulty` INTEGER DEFAULT 1,
-                `group` INTEGER NOT NULL,
                 `type` TEXT NOT NULL CHECK(`type` IN (\'POL\', \'CHL\', \'UMN\')));''')
 
             cursor.execute('''
@@ -49,7 +48,9 @@ class DiagnosticModule:
                 `student_id` INTEGER,
                 `section` TEXT,
                 `test_date` TEXT,
-                `s_complexity` INTEGER DEFAULT 1,
+                `pol_c` INTEGER NOT NULL,
+                `chl_c` INTEGER NOT NULL,
+                `umn_c` INTEGER NOT NULL,
                 `pol` REAL,
                 `chl` REAL,
                 `umn` REAL,
@@ -257,13 +258,13 @@ class DiagnosticModule:
             DiagnosticModule.__init_questions(cursor, chl_first, 'CHL', 1)
             DiagnosticModule.__init_questions(cursor, umn_first, 'UMN', 1)
 
-            DiagnosticModule.__init_questions(cursor, pol_second, 'POL', 2, 2)
-            DiagnosticModule.__init_questions(cursor, chl_second, 'CHL', 2, 2)
-            DiagnosticModule.__init_questions(cursor, umn_second, 'UMN', 2, 2)
+            DiagnosticModule.__init_questions(cursor, pol_second, 'POL', 2)
+            DiagnosticModule.__init_questions(cursor, chl_second, 'CHL', 2)
+            DiagnosticModule.__init_questions(cursor, umn_second, 'UMN', 2)
 
-            DiagnosticModule.__init_questions(cursor, pol_third, 'POL', 3, 3)
-            DiagnosticModule.__init_questions(cursor, chl_third, 'CHL', 3, 3)
-            DiagnosticModule.__init_questions(cursor, umn_third, 'UMN', 3, 3)
+            DiagnosticModule.__init_questions(cursor, pol_third, 'POL', 3)
+            DiagnosticModule.__init_questions(cursor, chl_third, 'CHL', 3)
+            DiagnosticModule.__init_questions(cursor, umn_third, 'UMN', 3)
 
             DiagnosticModule.__init_results(cursor)
         except Exception as e:
@@ -281,44 +282,43 @@ class DiagnosticModule:
             VALUES (?);''', ('Иванов',))
 
     @staticmethod
-    def __init_questions(cursor, questions, question_type, group, difficulty=1):
+    def __init_questions(cursor, questions, question_type, difficulty=1):
         insert = ((
             text,
             options,
             correct_answer,
             difficulty,
-            group,
             question_type
         ) for text, options, correct_answer in questions)
         cursor.executemany('''
             INSERT INTO `Questions`
-            (`text`, `options`, `correct_answer`, `difficulty`, `group`, `type`)
-            VALUES (?, ?, ?, ?, ?, ?);''', insert)
+            (`text`, `options`, `correct_answer`, `difficulty`, `type`)
+            VALUES (?, ?, ?, ?, ?);''', insert)
 
     @staticmethod
     def __init_results(cursor):
         results = (
-            (1, 1, 'РД 1.1.', '2025-09-01 12:00:00', 1, 0.6, 0.5, 0.3),
-            (2, 1, 'РД 1.2.', '2025-09-08 12:00:00', 1, 0.7, 0.5, 0.4),
-            (3, 1, 'РД 1.3.', '2025-09-15 12:00:00', 1, 0.8, 0.7, 0.3),
-            (4, 1, 'РД 2.1.', '2025-09-22 12:00:00', 1, 0.8, 0.8, 0.5),
-            (5, 1, 'РД 2.2.', '2025-09-29 12:00:00', 1, 0.9, 0.6, 0.2),
-            (6, 1, 'РД 2.3.', '2025-10-06 12:00:00', 1, 0.7, 0.5, 0.4),
-            (7, 1, 'РД 2.4.', '2025-10-13 12:00:00', 1, 0.6, 0.6, 0.3),
-            (8, 1, 'РД 3.1.', '2025-10-20 12:00:00', 1, 0.8, 0.7, 0.5),
-            (9, 1, 'РД 3.2.', '2025-10-27 12:00:00', 1, 0.9, 0.8, 0.6),
-            (10, 1, 'РД 3.3.', '2025-11-03 12:00:00', 1, 0.7, 0.7, 0.5),
-            (11, 1, 'РД 4.1.', '2025-11-10 12:00:00', 2, 0.6, 0.6, 0.4),
-            (12, 1, 'РД 4.2.', '2025-11-17 12:00:00', 2, 0.7, 0.7, 0.5),
-            (13, 1, 'РД 4.3.', '2025-11-24 12:00:00', 2, 0.8, 0.8, 0.6),
-            (14, 1, 'РД 5.1.', '2025-12-01 12:00:00', 2, 0.9, 0.8, 0.7),
-            (15, 1, 'РД 5.2.', '2025-12-08 12:00:00', 2, 0.8, 0.9, 0.6),
-            (16, 1, 'Итоговый', '2025-12-15 12:00:00', 2, 0.9, 0.9, 0.8)
+            (1,  1, 'РД 1.1.',  '2025-09-01 12:00:00', 1, 1, 1, 0.6, 0.5, 0.3),
+            (2,  1, 'РД 1.2.',  '2025-09-08 12:00:00', 1, 1, 1, 0.7, 0.5, 0.4),
+            (3,  1, 'РД 1.3.',  '2025-09-15 12:00:00', 1, 1, 1, 0.8, 0.7, 0.3),
+            (4,  1, 'РД 2.1.',  '2025-09-22 12:00:00', 1, 1, 1, 0.8, 0.8, 0.5),
+            (5,  1, 'РД 2.2.',  '2025-09-29 12:00:00', 1, 1, 1, 0.9, 0.6, 0.2),
+            (6,  1, 'РД 2.3.',  '2025-10-06 12:00:00', 1, 1, 1, 0.7, 0.5, 0.4),
+            (7,  1, 'РД 2.4.',  '2025-10-13 12:00:00', 1, 1, 2, 0.6, 0.6, 0.3),
+            (8,  1, 'РД 3.1.',  '2025-10-20 12:00:00', 1, 1, 2, 0.8, 0.7, 0.5),
+            (9,  1, 'РД 3.2.',  '2025-10-27 12:00:00', 1, 1, 2, 0.9, 0.8, 0.6),
+            (10, 1, 'РД 3.3.',  '2025-11-03 12:00:00', 1, 2, 1, 0.7, 0.7, 0.5),
+            (11, 1, 'РД 4.1.',  '2025-11-10 12:00:00', 2, 2, 1, 0.6, 0.6, 0.4),
+            (12, 1, 'РД 4.2.',  '2025-11-17 12:00:00', 2, 1, 2, 0.7, 0.7, 0.5),
+            (13, 1, 'РД 4.3.',  '2025-11-24 12:00:00', 2, 2, 2, 0.8, 0.8, 0.6),
+            (14, 1, 'РД 5.1.',  '2025-12-01 12:00:00', 2, 2, 2, 0.9, 0.8, 0.7),
+            (15, 1, 'РД 5.2.',  '2025-12-08 12:00:00', 2, 2, 3, 0.8, 0.9, 0.6),
+            (16, 1, 'Итоговый', '2025-12-15 12:00:00', 2, 3, 3, 0.9, 0.9, 0.8)
         )
         cursor.executemany('''
             INSERT INTO `Results`
-            (`id`, `student_id`, `section`, `test_date`, `s_complexity`, `pol`, `chl`, `umn`)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);''', results)
+            (`id`, `student_id`, `section`, `test_date`, `pol_c`, `chl_c`, `umn_c`, `pol`, `chl`, `umn`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', results)
 
     def generate_test(self, question_type) -> list[Question]:
         conn = sqlite3.connect(self.db_name)
@@ -326,9 +326,9 @@ class DiagnosticModule:
         questions = []
 
         for group in range(1, 4):
-            cursor.execute('''
+            cursor.execute(f'''
                 SELECT * FROM `Questions` 
-                WHERE `type`=? AND `group`=? 
+                WHERE `type`=? AND `difficulty`=? 
                 ORDER BY RANDOM() LIMIT 1''',
                            (question_type, group,))
             question = cursor.fetchone()
@@ -337,30 +337,7 @@ class DiagnosticModule:
         conn.close()
         return questions
 
-    # def take_test(self, student_id, section, s_complexity=1, ):
-    #     results = {'POL': 0.0, 'CHL': 0.0, 'UMN': 0.0}
-    #     pol_qs = self.generate_test('POL')
-    #     chl_qs = self.generate_test('CHL')
-    #     umn_qs = self.generate_test('UMN')
-    #
-    #     for questions in (pol_qs, chl_qs, umn_qs):
-    #         print(f"=== Тест {questions[0][6]} ===")
-    #         for q in questions:
-    #             print(f"Вопрос: {q[1]}")
-    #             print(f"Варианты:")
-    #             for key, value in json.loads(q[2]).items():
-    #                 print(f"  {key}: {value}")
-    #
-    #             answer = int(input("Ваш ответ -> "))
-    #             if answer == q[3]:
-    #                 results[q[6]] += round(random.uniform(0.1, 1 / 3), 2)
-    #             print()
-    #         print()
-    #
-    #     self.save_results(student_id, section, s_complexity, results['POL'], results['CHL'], results['UMN'])
-    #     return results
-
-    def get_metric_by_section_and_student_id(self, student_id, metric, section) -> float:
+    def get_additional_metric(self, student_id, metric, section) -> float:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute(
@@ -370,9 +347,9 @@ class DiagnosticModule:
             WHERE `student_id`=? AND `section`=?
             GROUP BY `section`
             ''', (student_id, section))
-        row: list[float, float, float] = cursor.fetchone()
+        row = cursor.fetchone()
         if row is not None:
-            metric_from_db = row[0 if metric == 'POL' else 1 if metric == 'CHL' else 2]
+            metric_from_db = float(row[0 if metric == 'POL' else 1 if metric == 'CHL' else 2])
         else:
             metric_from_db = 0
         conn.close()
@@ -523,6 +500,25 @@ class DiagnosticModule:
         """)
         results = cursor.fetchall()
         conn.close()
+        return results
+
+    def get_results_by_student_id(self, student_id):
+        conn = sqlite3.connect(self.db_name, check_same_thread=False)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+                        SELECT section, pol_c, chl_c, umn_c, pol, chl, umn 
+                        FROM Results 
+                        WHERE student_id = ? 
+                        ORDER BY id
+                    ''', (student_id,))
+
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        results = []
+        for row in rows:
+            results.append(Result(row))
         return results
 
 

@@ -1,8 +1,8 @@
 import sqlite3
 
 import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import pyplot as plt
 
 from .base import DiagnosticModule
 
@@ -128,7 +128,7 @@ class DiagnosticModuleTree(DiagnosticModule):
 
 
 if __name__ == "__main__":
-    dm = DiagnosticModuleTree()
-    print(dm.create_results_tree(2))
-    dm.display_student_results()
-    dm.plot_results_tree()
+    dm = DiagnosticModuleTree(init_database=True)
+    # print(dm.create_results_tree(2))
+    # dm.display_student_results()
+    # dm.plot_results_tree()

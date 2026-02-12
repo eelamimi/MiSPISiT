@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from .base import ChildWindow
 from diagnostic_module.tree import DiagnosticModuleTree
+from .map import MapWindow
 
 
 class Tree(ChildWindow):
@@ -33,4 +34,9 @@ class Tree(ChildWindow):
 
     def create_tree(self):
         student_id = self.module.get_student_id_by_name(self.student_combobox.get())
-        self.module.plot_results_tree(self.module.create_results_tree(student_id), student_id)
+        map_window = MapWindow(self, self.module.get_results_by_student_id(student_id))
+        map_window.show()
+        # self.module.plot_results_tree(self.module.create_results_tree(student_id), student_id)
+
+    def show_main(self):
+        self.deiconify()
