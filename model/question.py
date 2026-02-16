@@ -8,12 +8,10 @@ class Question:
         self.options: dict[int, str] = self.__get_options(q[2])
         self.answer: int = q[3]
         self.difficulty: int = q[4]
-        self.group: int = q[5]
-        self.type: int = q[6]
+        self.type: int = q[5]
 
     def __str__(self):
-        return f"{self.id} {self.text} {self.options} {self.answer} {self.difficulty} {self.group} {self.type}"
-
+        return f"{self.id} {self.text} {self.options} {self.answer} {self.difficulty} {self.type}"
     @staticmethod
     def __keys_to_int(obj):
         if isinstance(obj, dict):

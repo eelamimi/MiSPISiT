@@ -1,5 +1,5 @@
 class Result:
-    def __init__(self, r: tuple):
+    def __init__(self, r: tuple | list):
         self.full_section: str = r[0]
         self.pol_c: int = r[1]
         self.chl_c: int = r[2]

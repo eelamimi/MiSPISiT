@@ -11,6 +11,7 @@ class DiagnosticModule:
         self.db_name = db_name
         if init_database:
             self.__init_database()
+            print("database initialized")
 
     def __init_database(self):
         conn = sqlite3.connect(self.db_name, check_same_thread=False)
@@ -313,29 +314,24 @@ class DiagnosticModule:
             (13, 1, 'РД 4.3.',  '2025-11-24 12:00:00', 2, 2, 2, 0.8, 0.8, 0.6),
             (14, 1, 'РД 5.1.',  '2025-12-01 12:00:00', 2, 2, 2, 0.9, 0.8, 0.7),
             (15, 1, 'РД 5.2.',  '2025-12-08 12:00:00', 2, 2, 3, 0.8, 0.9, 0.6),
-            (16, 1, 'Итоговый', '2025-12-15 12:00:00', 2, 3, 3, 0.9, 0.9, 0.8)
         )
         cursor.executemany('''
             INSERT INTO `Results`
             (`id`, `student_id`, `section`, `test_date`, `pol_c`, `chl_c`, `umn_c`, `pol`, `chl`, `umn`)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', results)
 
-    def generate_test(self, question_type) -> list[Question]:
-        # TODO добавить difficulty в окно тестирования и потом заменить сохранение теста
+    def generate_test(self, question_type: str, difficulty: int) -> list[Question]:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
-        questions = []
 
-        for group in range(1, 4):
-            cursor.execute(f'''
-                SELECT * FROM `Questions` 
-                WHERE `type`=? AND `difficulty`=? 
-                ORDER BY RANDOM() LIMIT 1''',
-                           (question_type, group,))
-            question = cursor.fetchone()
-            if question:
-                questions.append(Question(question))
+        cursor.execute(f'''
+            SELECT * FROM `Questions` 
+            WHERE `type`=? AND `difficulty`=? 
+            ORDER BY RANDOM() LIMIT 3''',
+                       (question_type, difficulty,))
+        questions = [Question(q) for q in cursor.fetchall()]
         conn.close()
+
         return questions
 
     def get_additional_metric(self, student_id, metric, section) -> float:
@@ -356,7 +352,7 @@ class DiagnosticModule:
         conn.close()
         return metric_from_db
 
-    def save_results(self, student_id, section, s_complexity, pol, chl, umn):
+    def save_results(self, student_id, section, pol_c, chl_c, umn_c, pol, chl, umn):
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
 
@@ -364,10 +360,10 @@ class DiagnosticModule:
         cursor.execute(
             '''
             INSERT INTO `Results`
-            (`student_id`, `section`, `test_date`, `s_complexity`, `pol`, `chl`, `umn`)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (`student_id`, `section`, `test_date`, `pol_c`, `chl_c`, `umn_c`, `pol`, `chl`, `umn`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
-            (student_id, section, current_date, s_complexity, pol, chl, umn))
+            (student_id, section, current_date, pol_c, chl_c, umn_c, pol, chl, umn,))
 
         conn.commit()
         conn.close()
@@ -420,7 +416,7 @@ class DiagnosticModule:
             print_formatted_row("CHL", chl_values)
             print_formatted_row("UMN", umn_values)
 
-    def get_complexities(self):
+    def get_difficulties(self) -> dict[str, list[str]]:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute('''
@@ -436,6 +432,8 @@ class DiagnosticModule:
             result[type_name] = difficulties
 
         conn.close()
+        for k, v in result.items():
+            result[k] = list(map(str, sorted(v)))
         return result
 
     def save_student(self, student_name) -> int:
@@ -473,19 +471,7 @@ class DiagnosticModule:
         else:
             return -1
 
-    def get_all_students(self):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT `name` 
-            FROM `Students` 
-            ORDER BY `name`
-        """)
-        results = cursor.fetchall()
-        conn.close()
-        return results
-
-    def get_all_students_have_final(self):
+    def get_all_students_have_result(self):
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute("""
@@ -495,7 +481,6 @@ class DiagnosticModule:
                 SELECT 1 
                 FROM `Results` r 
                 WHERE r.`student_id` = s.`id` 
-                AND r.`section` = 'Итоговый'
             )
             ORDER BY s.`name`
         """)
@@ -517,9 +502,29 @@ class DiagnosticModule:
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        results = []
+
+        grouped_results = defaultdict(lambda: [0] * 6)
+        result_counter = defaultdict(lambda: [0] * 3)
         for row in rows:
-            results.append(Result(row))
+            r = Result(row)
+            grouped_results[r.full_section][0] = max(r.pol_c, grouped_results[r.full_section][0])
+            grouped_results[r.full_section][1] = max(r.chl_c, grouped_results[r.full_section][1])
+            grouped_results[r.full_section][2] = max(r.umn_c, grouped_results[r.full_section][2])
+            grouped_results[r.full_section][3] += r.pol
+            grouped_results[r.full_section][4] += r.chl
+            grouped_results[r.full_section][5] += r.umn
+            result_counter[r.full_section][0] += 1 if r.pol != 0 else 0
+            result_counter[r.full_section][1] += 1 if r.chl != 0 else 0
+            result_counter[r.full_section][2] += 1 if r.umn != 0 else 0
+
+        results = []
+        for section, metrics in grouped_results.items():
+            r = Result([section] + [*metrics[:3]] +
+                 [metrics[3] / result_counter[section][0] if result_counter[section][0] != 0 else metrics[3]] +
+                 [metrics[4] / result_counter[section][1] if result_counter[section][1] != 0 else metrics[4]] +
+                 [metrics[5] / result_counter[section][2] if result_counter[section][2] != 0 else metrics[5]])
+            results.append(r)
+
         return results
 
 

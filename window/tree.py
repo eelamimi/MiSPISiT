@@ -21,7 +21,7 @@ class Tree(ChildWindow):
 
         self.student_label = ttk.Label(self, text="Студент:", anchor='e')
         self.student_label.grid(row=1, column=1, pady=10, padx=5, sticky='ew')
-        students = self.module.get_all_students_have_final()
+        students = self.module.get_all_students_have_result()
         self.student_combobox = ttk.Combobox(self, values=students, state='readonly', width=17)
         self.student_combobox.set(students[0])
         self.student_combobox.grid(row=1, column=2, pady=10, padx=5, sticky='ew')
@@ -36,7 +36,6 @@ class Tree(ChildWindow):
         student_id = self.module.get_student_id_by_name(self.student_combobox.get())
         map_window = MapWindow(self, self.module.get_results_by_student_id(student_id))
         map_window.show()
-        # self.module.plot_results_tree(self.module.create_results_tree(student_id), student_id)
 
     def show_main(self):
         self.deiconify()

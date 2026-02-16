@@ -8,7 +8,7 @@ from window.tree import Tree
 
 
 class DigitalTwin(tk.Tk, BaseWindow):
-    def __init__(self, module=DiagnosticModuleTree(init_database=1), w=400, h=300, test_class=Test, w_test=300,
+    def __init__(self, module: DiagnosticModuleTree, w=400, h=300, test_class=Test, w_test=300,
                  h_test=400,
                  tree_class=Tree, w_tree=300, h_tree=400):
         super().__init__()
@@ -67,5 +67,3 @@ if __name__ == "__main__":
         Tree, 300, 400
     )
     root.mainloop()
-    # module = DiagnosticModuleTree(init_database=True)
-    # print(module.get_results_by_student_id(1))
