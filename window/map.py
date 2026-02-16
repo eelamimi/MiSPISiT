@@ -107,7 +107,9 @@ class MapWindow(ChildWindow):
             x1_both = x0_both + self.w_sq / 3
             y0_lower = y1_upper = y0_upper + self.h_sq * (1 - m)
             y1_lower = y0_upper + self.h_sq
-            self.canvas.create_rectangle(x0_both, y0_lower, x1_both, y1_lower, outline='black', fill='gray')
+
+            if m != 0:
+                self.canvas.create_rectangle(x0_both, y0_lower, x1_both, y1_lower, outline='black', fill='gray')
             self.canvas.create_rectangle(x0_both, y0_upper, x1_both, y1_upper, outline='black', fill='white')
 
             x_t = (x0_both + x1_both) / 2
