@@ -6,11 +6,11 @@ from window.base import ChildWindow
 
 
 class MapWindow(ChildWindow):
-    def __init__(self, parent, results: list[Result]):
+    def __init__(self, parent, name, results: list[Result]):
         self.h = 600
         self.pady = 50
         super().__init__(parent, 10, self.h)
-        self.title("Дерево результатов")
+        self.title(f"Дерево результатов студента {name}")
         self.results = results
         self.w_sq = self.h_sq = 90
 
