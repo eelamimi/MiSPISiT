@@ -19,13 +19,13 @@ class QuestionsWindow(ChildWindow):
         self.len = len(questions)
         self.timer_active = False
         self.current_loop = None
-        self.timer = self.current_q.difficulty + self.index + 1
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(10, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(3, weight=1)
 
+        self.__set_new_time()
         self.timer_label = tk.Label(self, text=str(self.timer))
         self.timer_label.grid(row=1, column=1, columnspan=2, pady=20)
 
@@ -84,7 +84,7 @@ class QuestionsWindow(ChildWindow):
         if self.index < (self.len - 1):
             self.index += 1
             self.current_q = self.questions[self.index]
-        self.timer = self.current_q.difficulty + self.index + 1
+        self.__set_new_time()
 
     def __update_q(self):
         self.title_label.config(text=f"№ {self.index + 1}\tТип: {self.type}")
@@ -124,3 +124,6 @@ class QuestionsWindow(ChildWindow):
 
     def __save_test(self):
         self.parent.save_results(round(self.correct_answers / 3 * 10) / 10)
+
+    def __set_new_time(self):
+        self.timer = self.index + 1
