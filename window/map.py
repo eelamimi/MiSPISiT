@@ -100,13 +100,13 @@ class MapWindow(ChildWindow):
     def __draw_rectangle(self, x_init: float, y_init: float, result: Result) -> tuple[
         tuple[float, float], tuple[float, float]]:
         y0_upper = y_init
+        y1_lower = y0_upper + self.h_sq
         for i, mc in enumerate(((result.pol, result.pol_c), (result.chl, result.chl_c), (result.umn, result.umn_c))):
             m, c = mc
 
             x0_both = x_init + self.w_sq / 3 * i
             x1_both = x0_both + self.w_sq / 3
             y0_lower = y1_upper = y0_upper + self.h_sq * (1 - m)
-            y1_lower = y0_upper + self.h_sq
 
             if m != 0:
                 self.canvas.create_rectangle(x0_both, y0_lower, x1_both, y1_lower, outline='black', fill='gray')

@@ -123,4 +123,4 @@ class QuestionsWindow(ChildWindow):
         self.return_to_main_to_main()
 
     def __save_test(self):
-        self.parent.save_results(round(self.correct_answers / 3 * 10) / 10, self.type)
+        self.parent.save_results(round(self.correct_answers / 3 * 10) / 10)

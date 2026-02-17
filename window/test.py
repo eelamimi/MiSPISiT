@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 
 from diagnostic_module.tree import DiagnosticModuleTree
 from .base import ChildWindow
-from .questions_window import QuestionsWindow
+from .questions import QuestionsWindow
 
 
 class Test(ChildWindow):
@@ -68,7 +68,7 @@ class Test(ChildWindow):
         questions_window = QuestionsWindow(self, questions, 300, 650)
         questions_window.show()
 
-    def save_results(self, result, metric):
+    def save_results(self, result):
         student_name = self.student_entry.get().strip()
         student_id = self.module.get_student_id_by_name(student_name)
         if student_id is None or student_id == -1:
@@ -77,6 +77,7 @@ class Test(ChildWindow):
         full_section = f"РД {self.section_entry.get()}.{self.subsection_entry.get()}."
 
         pol = chl = umn = pol_c = chl_c = umn_c = 0
+        metric = self.metric.get()
         if metric == 'POL':
             pol = result
             pol_c = int(self.difficulty.get())
