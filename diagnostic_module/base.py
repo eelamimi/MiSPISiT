@@ -513,9 +513,9 @@ class DiagnosticModule:
             grouped_results[r.full_section][3] += r.pol
             grouped_results[r.full_section][4] += r.chl
             grouped_results[r.full_section][5] += r.umn
-            result_counter[r.full_section][0] += 1 if r.pol != 0 else 0
-            result_counter[r.full_section][1] += 1 if r.chl != 0 else 0
-            result_counter[r.full_section][2] += 1 if r.umn != 0 else 0
+            result_counter[r.full_section][0] += 1 if r.pol != 0 or r.pol_c != 0 else 0
+            result_counter[r.full_section][1] += 1 if r.chl != 0 or r.chl_c != 0 else 0
+            result_counter[r.full_section][2] += 1 if r.umn != 0 or r.umn_c != 0 else 0
 
         results = []
         for section, metrics in grouped_results.items():
