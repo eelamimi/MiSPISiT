@@ -61,7 +61,7 @@ class DigitalTwin(tk.Tk, BaseWindow):
 
 if __name__ == "__main__":
     root = DigitalTwin(
-        DiagnosticModuleTree(init_database=False),
+        DiagnosticModuleTree(init_database=True),
         400, 300,
         Test, 300, 340,
         Tree, 300, 400
