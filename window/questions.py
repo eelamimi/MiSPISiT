@@ -125,7 +125,7 @@ class QuestionsWindow(ChildWindow):
         self.return_to_main_to_main()
 
     def __save_test(self):
-        self.parent.save_results(self.result)
+        self.parent.save_result(self.result)
 
     def __set_new_time(self):
         self.timer = 18

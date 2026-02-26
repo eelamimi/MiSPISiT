@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from diagnostic_module.tree import DiagnosticModuleTree
+from db.repository import Repository
 from .base import ChildWindow
 from .questions import QuestionsWindow
 
 
 class Test(ChildWindow):
-    def __init__(self, parent, module: DiagnosticModuleTree, w, h):
+    def __init__(self, parent, module: Repository, w, h):
         super().__init__(parent, w, h)
         self.title("Тестирование")
         self.module = module
@@ -52,7 +52,7 @@ class Test(ChildWindow):
         try:
             self.__validate_entries()
         except ValueError as e:
-            messagebox.showerror("Ошибка", e)
+            messagebox.showerror("Ошибка", str(e))
             return
         self.withdraw()
         questions, self.max_difficulty = self.module.generate_test(self.metric.get())
@@ -64,9 +64,7 @@ class Test(ChildWindow):
             raise SystemExit("Как")
 
         student_name = self.student_entry.get().strip()
-        student_id = self.module.get_student_id_by_name(student_name)
-        if student_id is None or student_id == -1:
-            student_id = self.module.save_student(student_name)
+        student_id = self.module.save_student(student_name)
 
         full_section = f"РД {self.section_entry.get()}.{self.subsection_entry.get()}."
 
@@ -81,7 +79,8 @@ class Test(ChildWindow):
         else:
             umn = result
             umn_c = self.max_difficulty
-        self.module.save_results(student_id, full_section, pol_c, chl_c, umn_c, pol, chl, umn)
+
+        self.module.save_result(student_id, full_section, pol_c, chl_c, umn_c, pol, chl, umn)
 
     def __validate_entries(self):
         if not self.student_entry.get().strip().isalpha():

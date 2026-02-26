@@ -1,20 +1,19 @@
 import tkinter as tk
 from tkinter import messagebox
 
-from diagnostic_module.tree import DiagnosticModuleTree
+from db.repository import Repository
 from window.base import BaseWindow
 from window.test import Test
 from window.tree import Tree
 
 
 class DigitalTwin(tk.Tk, BaseWindow):
-    def __init__(self, module: DiagnosticModuleTree, w=400, h=300,
+    def __init__(self, module: Repository, w=400, h=300,
                  test_class=Test, w_test=300, h_test=400,
                  tree_class=Tree, w_tree=300, h_tree=400):
         super().__init__()
         self.title("Цифровой двойник студента")
         self.resizable(False, False)
-        self.protocol("WM_DELETE_WINDOW", self.exit_action)
         self.center_window(self, w, h)
         self.module = module
 
@@ -61,7 +60,7 @@ class DigitalTwin(tk.Tk, BaseWindow):
 
 if __name__ == "__main__":
     root = DigitalTwin(
-        DiagnosticModuleTree(init_database=True),
+        Repository(init_database=True),
         400, 300,
         Test, 300, 340,
         Tree, 300, 400)
