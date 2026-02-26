@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox as mb
 
 from model.question import Question
-from .base import ChildWindow
+from window.child import ChildWindow
 
 
 class QuestionsWindow(ChildWindow):
@@ -122,7 +122,7 @@ class QuestionsWindow(ChildWindow):
             message=f"Правильных ответов: {self.correct_answers}\n"
                     f"Неправильных ответов: {self.len - self.correct_answers}\n\n"
                     f"Баллов: {self.result}")
-        self.return_to_main_to_main()
+        self.return_to_main()
 
     def __save_test(self):
         self.parent.save_result(self.result)

@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from db.repository import Repository
-from .base import ChildWindow
-from .questions import QuestionsWindow
+from window.child import ChildWindow
+from window.questions import QuestionsWindow
 
 
 class Test(ChildWindow):
@@ -56,7 +56,7 @@ class Test(ChildWindow):
             return
         self.withdraw()
         questions, self.max_difficulty = self.module.generate_test(self.metric.get())
-        questions_window = QuestionsWindow(self, questions, self.max_difficulty, 300, 650)
+        questions_window = QuestionsWindow(self.parent, questions, self.max_difficulty, 300, 650)
         questions_window.show()
 
     def save_results(self, result):

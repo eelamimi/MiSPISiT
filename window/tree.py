@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 
-from .base import ChildWindow
+from window.child import ChildWindow
 from db.repository import Repository
-from .map import MapWindow
+from window.map import MapWindow
 
 
 class Tree(ChildWindow):

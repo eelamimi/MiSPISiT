@@ -2,8 +2,8 @@ import tkinter as tk
 from collections import defaultdict
 
 from model.result import Result
-from window.base import ChildWindow
-from .triangle import TriangleWindow
+from window.child import ChildWindow
+from window.triangle import TriangleWindow
 
 
 class MapWindow(ChildWindow):
