@@ -64,6 +64,5 @@ if __name__ == "__main__":
         DiagnosticModuleTree(init_database=True),
         400, 300,
         Test, 300, 340,
-        Tree, 300, 400
-    )
+        Tree, 300, 400)
     root.mainloop()

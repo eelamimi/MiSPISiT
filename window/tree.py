@@ -33,10 +33,12 @@ class Tree(ChildWindow):
         self.exit_button.grid(row=3, column=1, columnspan=2, pady=10)
 
     def create_tree(self):
+        self.withdraw()
         student_name = self.student_combobox.get()
         student_id = self.module.get_student_id_by_name(student_name)
-        map_window = MapWindow(self, student_name, self.module.get_results_by_student_id(student_id))
+        map_window = MapWindow(self, self.module, student_name, self.module.get_results_by_student_id(student_id))
         map_window.show()
 
     def show_main(self):
         self.deiconify()
+        

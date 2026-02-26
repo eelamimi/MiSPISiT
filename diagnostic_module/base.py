@@ -416,7 +416,7 @@ class DiagnosticModule:
             print_formatted_row("CHL", chl_values)
             print_formatted_row("UMN", umn_values)
 
-    def get_difficulties(self) -> dict[str, list[str]]:
+    def get_difficulties(self, is_need_int=False) -> dict[str, list[str]]:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute('''
@@ -432,8 +432,12 @@ class DiagnosticModule:
             result[type_name] = difficulties
 
         conn.close()
-        for k, v in result.items():
-            result[k] = list(map(str, sorted(v)))
+        if is_need_int:
+            for k, v in result.items():
+                result[k] = sorted(v)
+        else:
+            for k, v in result.items():
+                result[k] = list(map(str, sorted(v)))
         return result
 
     def save_student(self, student_name) -> int:

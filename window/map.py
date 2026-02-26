@@ -3,14 +3,17 @@ from collections import defaultdict
 
 from model.result import Result
 from window.base import ChildWindow
+from .triangle import TriangleWindow
 
 
 class MapWindow(ChildWindow):
-    def __init__(self, parent, name, results: list[Result]):
+    def __init__(self, parent, module, name, results: list[Result]):
         self.h = 600
         self.pady = 50
+        self.name = name
+        self.module = module
         super().__init__(parent, 10, self.h)
-        self.title(f"Дерево результатов студента {name}")
+        self.title(f"Дерево результатов студента {self.name}")
         self.results = results
         self.w_sq = self.h_sq = 90
 
@@ -64,7 +67,7 @@ class MapWindow(ChildWindow):
         x = (x - amount_of_sections * self.w_sq - (amount_of_sections - 1) * sepx) / 2
         y = self.h - self.pady - self.h_sq - (self.h - (self.pady + self.h_sq) * 2 - self.h_sq) / 2 - self.h_sq
 
-        pol_f = chl_f = umn_f = pol_c_f = chl_c_f = umn_c_f = 0
+        self.pol_f = self.chl_f = self.umn_f = self.pol_c_f = self.chl_c_f = self.umn_c_f = 0
 
         for result in parent_results:
             coords = self.__draw_rectangle(x, y, result)
@@ -75,22 +78,25 @@ class MapWindow(ChildWindow):
             parent_coords.append(coords[0])
 
             # подсчёт за весь курс
-            pol_f += result.pol
-            chl_f += result.chl
-            umn_f += result.umn
-            pol_c_f += result.pol_c
-            chl_c_f += result.chl_c
-            umn_c_f += result.umn_c
+            self.pol_f += result.pol
+            self.chl_f += result.chl
+            self.umn_f += result.umn
+            self.pol_c_f += result.pol_c
+            self.chl_c_f += result.chl_c
+            self.umn_c_f += result.umn_c
+
+        self.pol_c_f = round(self.pol_c_f / amount_of_sections, 2)
+        self.chl_c_f = round(self.chl_c_f / amount_of_sections, 2)
+        self.umn_c_f = round(self.umn_c_f / amount_of_sections, 2)
+        self.pol_f = round(self.pol_f / amount_of_sections, 2)
+        self.chl_f = round(self.chl_f / amount_of_sections, 2)
+        self.umn_f = round(self.umn_f / amount_of_sections, 2)
 
         final_coords = self.__draw_rectangle(
             w // 2 - self.w_sq // 2, self.pady,
-            Result(('Курс',
-                    round(pol_c_f / amount_of_sections, 2),
-                    round(chl_c_f / amount_of_sections, 2),
-                    round(umn_c_f / amount_of_sections, 2),
-                    round(pol_f / amount_of_sections, 2),
-                    round(chl_f / amount_of_sections, 2),
-                    round(umn_f / amount_of_sections, 2))))
+            Result(('Учебный курс',
+                    self.pol_c_f, self.chl_c_f, self.umn_c_f,
+                    self.pol_f, self.chl_f, self.umn_f)))
 
         for coords in parent_coords:
             self.__draw_line(coords, final_coords[1])
@@ -128,3 +134,10 @@ class MapWindow(ChildWindow):
 
     def __draw_line(self, coords0: tuple[float, float], coords1: tuple[float, float]) -> None:
         self.canvas.create_line(coords0, coords1, fill='black')
+
+    def exit_action(self):
+        self.destroy()
+        triangle_window = TriangleWindow(self.parent, self.module, self.name,
+                                         self.pol_c_f, self.chl_c_f, self.umn_c_f,
+                                         self.pol_f, self.chl_f, self.umn_f)
+        triangle_window.show()
