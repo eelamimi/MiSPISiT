@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
 
-from .base import ChildWindow
-from diagnostic_module.tree import DiagnosticModuleTree
-from .map import MapWindow
+from window.child import ChildWindow
+from db.repository import Repository
+from window.map import MapWindow
 
 
 class Tree(ChildWindow):
-    def __init__(self, parent, module: DiagnosticModuleTree, h, w):
+    def __init__(self, parent, module: Repository, h, w):
         super().__init__(parent, h, w)
         self.title("Дерево результатов")
         self.module = module

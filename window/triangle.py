@@ -1,7 +1,7 @@
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from window.base import ChildWindow
+from window.child import ChildWindow
 
 
 class TriangleWindow(ChildWindow):

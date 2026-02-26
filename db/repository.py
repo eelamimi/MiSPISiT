@@ -7,7 +7,7 @@ from datetime import datetime
 from model.question import Question
 from model.result import Result
 
-class DiagnosticModule:
+class Repository:
     def __init__(self, db_name='education.db', init_database=False):
         self.db_name = db_name
         if init_database:
@@ -58,7 +58,7 @@ class DiagnosticModule:
                 `umn` REAL,
                 FOREIGN KEY (`student_id`) REFERENCES Students (`id`));''')
 
-            DiagnosticModule.__init_student(cursor)
+            Repository.__init_student(cursor)
 
             pol_first = (
                 ("Что представляет собой предметная область?", json.dumps(
@@ -256,19 +256,19 @@ class DiagnosticModule:
                      2: "Возникают постоянные технические сбои", 3: "Программы становятся менее интуитивными"}), 1)
             )
 
-            DiagnosticModule.__init_questions(cursor, pol_first, 'POL', 1)
-            DiagnosticModule.__init_questions(cursor, chl_first, 'CHL', 1)
-            DiagnosticModule.__init_questions(cursor, umn_first, 'UMN', 1)
+            Repository.__init_questions(cursor, pol_first, 'POL', 1)
+            Repository.__init_questions(cursor, chl_first, 'CHL', 1)
+            Repository.__init_questions(cursor, umn_first, 'UMN', 1)
 
-            DiagnosticModule.__init_questions(cursor, pol_second, 'POL', 2)
-            DiagnosticModule.__init_questions(cursor, chl_second, 'CHL', 2)
-            DiagnosticModule.__init_questions(cursor, umn_second, 'UMN', 2)
+            Repository.__init_questions(cursor, pol_second, 'POL', 2)
+            Repository.__init_questions(cursor, chl_second, 'CHL', 2)
+            Repository.__init_questions(cursor, umn_second, 'UMN', 2)
 
-            DiagnosticModule.__init_questions(cursor, pol_third, 'POL', 3)
-            DiagnosticModule.__init_questions(cursor, chl_third, 'CHL', 3)
-            DiagnosticModule.__init_questions(cursor, umn_third, 'UMN', 3)
+            Repository.__init_questions(cursor, pol_third, 'POL', 3)
+            Repository.__init_questions(cursor, chl_third, 'CHL', 3)
+            Repository.__init_questions(cursor, umn_third, 'UMN', 3)
 
-            DiagnosticModule.__init_results(cursor)
+            Repository.__init_results(cursor)
         except Exception as e:
             print(e)
             conn.rollback()
@@ -311,10 +311,10 @@ class DiagnosticModule:
             (9,  1, 'РД 3.2.',  '2025-10-27 12:00:00', 1, 1, 2, 0.9, 0.8, 0.6),
             (10, 1, 'РД 3.3.',  '2025-11-03 12:00:00', 1, 2, 1, 0.7, 0.7, 0.5),
             (11, 1, 'РД 4.1.',  '2025-11-10 12:00:00', 2, 2, 1, 0.6, 0.6, 0.4),
-            (12, 1, 'РД 4.2.',  '2025-11-17 12:00:00', 2, 1, 2, 0.7, 0.7, 0.5),
+            (12, 1, 'РД 4.2.',  '2025-11-17 12:00:00', 2, 1, 2, 0.7, 0.7, 0.6),
             (13, 1, 'РД 4.3.',  '2025-11-24 12:00:00', 2, 2, 2, 0.8, 0.8, 0.6),
             (14, 1, 'РД 5.1.',  '2025-12-01 12:00:00', 2, 2, 2, 0.9, 0.8, 0.7),
-            (15, 1, 'РД 5.2.',  '2025-12-08 12:00:00', 2, 2, 3, 0.8, 0.9, 0.6),
+            (15, 1, 'РД 5.2.',  '2025-12-08 12:00:00', 2, 2, 3, 0.8, 0.9, 0.8),
         )
         cursor.executemany('''
             INSERT INTO `Results`
@@ -322,241 +322,185 @@ class DiagnosticModule:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', results)
 
     def generate_test(self, question_type: str) -> tuple[list[Question], int]:
-        difficulties = self.get_difficulties(True)[question_type]
-        max_d: int = max(difficulties)
-        min_d: int = min(difficulties)
-        mid_d: int = random.choice([d for d in difficulties if d != max_d or d != min_d])
-        diffs = (min_d, mid_d, max_d)
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
+        difficulties = self.get_difficulties(is_need_int=True).get(question_type, [])
+        if not difficulties:
+            raise ValueError(f"No questions available for type: {question_type}")
+
+        selected_difficulties = self.__select_difficulties(difficulties)
+
+        questions = self.__get_questions_for_difficulties(question_type, selected_difficulties)
+
+        return questions, max(difficulties)
+
+    def __select_difficulties(self, difficulties: list[int]) -> list[int]:
+        if len(difficulties) <= 3:
+            return sorted(difficulties)
+
+        min_d = min(difficulties)
+        max_d = max(difficulties)
+
+        middle_options = [d for d in difficulties if d not in (min_d, max_d)]
+        mid_d = random.choice(middle_options)
+
+        return [min_d, mid_d, max_d]
+
+    def __get_questions_for_difficulties(self, question_type: str,difficulties: list[int]) -> list[Question]:
+        query = '''
+            SELECT * FROM Questions 
+            WHERE type = ? AND difficulty = ? 
+            ORDER BY RANDOM() LIMIT 1
+        '''
+
         questions = []
-        q_ids = []
-        for diff in diffs:
-            cursor.execute(f'''
-                SELECT * FROM `Questions` 
-                WHERE `type`=? AND `difficulty`=? 
-                ORDER BY RANDOM() LIMIT 1''',
-                           (question_type, diff,))
-            q = Question(cursor.fetchone())
-            if q.id not in q_ids:
-                q_ids.append(q.id)
-                questions.append(q)
-        conn.close()
+        with sqlite3.connect(self.db_name) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        return questions, max_d
+            for difficulty in difficulties:
+                cursor.execute(query, (question_type, difficulty))
+                row = cursor.fetchone()
 
-    def get_additional_metric(self, student_id, metric, section) -> float:
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute(
-            '''
-            SELECT sum(pol), sum(chl), sum(umn) 
-            FROM Results 
-            WHERE `student_id`=? AND `section`=?
-            GROUP BY `section`
-            ''', (student_id, section))
-        row = cursor.fetchone()
-        if row is not None:
-            metric_from_db = float(row[0 if metric == 'POL' else 1 if metric == 'CHL' else 2])
-        else:
-            metric_from_db = 0
-        conn.close()
-        return metric_from_db
+                if row is None:
+                    raise ValueError(f"No question found for type {question_type} "
+                                     f"with difficulty {difficulty}")
 
-    def save_results(self, student_id, section, pol_c, chl_c, umn_c, pol, chl, umn):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
+                questions.append(Question(row))
+
+        return questions
+
+    def save_result(self, student_id: int, section: str,
+                    pol_c: int, chl_c: int, umn_c: int,
+                    pol: int, chl: int, umn: int) -> None:
         current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        cursor.execute('SELECT * FROM `Results` WHERE `student_id`=? AND `section`=?',
-                       (student_id, section,))
-        row = cursor.fetchone()
-        if row is None:
-            cursor.execute(
-                '''
-                INSERT INTO `Results`
-                (`student_id`, `section`, `test_date`, `pol_c`, `chl_c`, `umn_c`, `pol`, `chl`, `umn`)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                (student_id, section, current_date, pol_c, chl_c, umn_c, pol, chl, umn,))
-        else:
-            cursor.execute('''
-            UPDATE `Results` 
-            SET `test_date`=?, `pol_c`=?, `chl_c`=?, `umn_c`=?, `pol`=?, `chl`=?, `umn`=?
-            WHERE `id`=?
-            ''', (current_date,
-                  max(row[4], pol_c), max(row[5], chl_c), max(row[6], umn_c),
-                  (row[7] + pol) // 1, (row[8] + chl) // 1, (row[9] + umn) // 1,
-                  row[0],))
+        query_check = 'SELECT * FROM Results WHERE student_id = ? AND section = ?'
+        query_insert = '''
+            INSERT INTO Results 
+            (student_id, section, test_date, pol_c, chl_c, umn_c, pol, chl, umn)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        '''
+        query_update = '''
+            UPDATE Results 
+            SET test_date = ?, pol_c = ?, chl_c = ?, umn_c = ?, 
+                pol = ?, chl = ?, umn = ?
+            WHERE id = ?
+        '''
 
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
 
-        conn.commit()
-        conn.close()
+            # Проверяем существующую запись
+            cursor.execute(query_check, (student_id, section))
+            existing = cursor.fetchone()
 
-    def display_student_results(self):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
+            if existing is None:
+                # Вставляем новую запись
+                cursor.execute(query_insert, (
+                    student_id, section, current_date,
+                    pol_c, chl_c, umn_c, pol, chl, umn))
+            else:
+                cursor.execute(query_update, (
+                    current_date,
+                    max(existing[4], pol_c),
+                    max(existing[5], chl_c),
+                    max(existing[6], umn_c),
+                    min(existing[7] + pol, 1),
+                    min(existing[8] + chl, 1),
+                    min(existing[9] + umn, 1),
+                    existing[0]))
 
-        cursor.execute("""
-                SELECT student_id, section, s_complexity, pol, chl, umn 
-                FROM Results
-                ORDER BY student_id
-            """)
+            conn.commit()
 
-        results = cursor.fetchall()
-        conn.close()
-
-        if not results:
-            print("Нет данных в таблице Results")
-            return
-
-        student_data = defaultdict(list)
-        for row in results:
-            student_id, section, s_complexity, pol, chl, umn = row
-            student_data[student_id].append({
-                'section': section,
-                's_complexity': s_complexity,
-                'pol': pol,
-                'chl': chl,
-                'umn': umn
-            })
-
-        for student_id, records in student_data.items():
-            print(f"\nSTUDENT ID: {student_id}")
-            print("=" * 60)
-
-            sections = [record['section'] for record in records]
-            complexities = [record['s_complexity'] for record in records]
-            pol_values = [f"{record['pol']:.1f}" if record['pol'] is not None else 'NULL' for record in records]
-            chl_values = [f"{record['chl']:.1f}" if record['chl'] is not None else 'NULL' for record in records]
-            umn_values = [f"{record['umn']:.1f}" if record['umn'] is not None else 'NULL' for record in records]
-
-            def print_formatted_row(label, values, column_width=7):
-                formatted_values = [f"{val:^{column_width}}" for val in values]
-                print(f"{label:<10} | {' | '.join(formatted_values)}")
-
-            print_formatted_row("Секция", sections)
-            print_formatted_row("Сложность", complexities)
-            print_formatted_row("POL", pol_values)
-            print_formatted_row("CHL", chl_values)
-            print_formatted_row("UMN", umn_values)
-
-    def get_difficulties(self, is_need_int=False) -> dict[str, list] | dict[str, list]:
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT type, GROUP_CONCAT(DISTINCT difficulty) as difficulties
+    def get_difficulties(self, is_need_int: bool = False) -> dict[str, list]:
+        query = '''
+            SELECT type, GROUP_CONCAT(DISTINCT difficulty) AS difficulties
             FROM Questions
             GROUP BY type
-        ''')
+        '''
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
 
         result = {}
-        for row in cursor.fetchall():
-            type_name = row[0]
-            difficulties = set(map(int, row[1].split(','))) if row[1] else ()
-            result[type_name] = difficulties
+        for type_name, difficulties_str in rows:
+            if difficulties_str:
+                difficulties = set(map(int, difficulties_str.split(',')))
+            else:
+                difficulties = set()
 
-        conn.close()
-        if is_need_int:
-            for k, v in result.items():
-                result[k] = sorted(v)
-        else:
-            for k, v in result.items():
-                result[k] = list(map(str, sorted(v)))
+            sorted_difficulties = sorted(difficulties)
+            if is_need_int:
+                result[type_name] = sorted_difficulties
+            else:
+                result[type_name] = list(map(str, sorted_difficulties))
+
         return result
 
-    def save_student(self, student_name) -> int:
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute(
-            '''
-            INSERT INTO `Students`
-            (`name`)
+    def save_student(self, student_name: str) -> int:
+        existing_id = self.get_student_id_by_name(student_name)
+        if existing_id != -1:
+            return existing_id
+
+        query = '''
+            INSERT INTO Students (name)
             VALUES (?)
             RETURNING id
-            ''',
-            (student_name,))
+        '''
 
-        student_id = cursor.fetchone()[0]
-        conn.commit()
-        conn.close()
+        with sqlite3.connect(self.db_name) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (student_name,))
+                student_id = cursor.fetchone()[0]
+                conn.commit()
 
         return student_id
 
-    def get_student_id_by_name(self, student_name):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute(
-            '''
-            SELECT id FROM Students WHERE name = ?
-            ''',
-            (student_name,))
+    def get_student_id_by_name(self, student_name: str):
+        query = 'SELECT id FROM Students WHERE name = ?'
 
-        result = cursor.fetchone()
-        conn.close()
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (student_name,))
+            result = cursor.fetchone()
 
-        if result:
-            return result[0]
-        else:
-            return -1
+        return result[0] if result else -1
 
-    def get_all_students_have_result(self):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT s.`name` 
-            FROM `Students` s
+    def get_all_students_have_result(self) -> list[str]:
+        query = """
+            SELECT s.name 
+            FROM Students s
             WHERE EXISTS (
                 SELECT 1 
-                FROM `Results` r 
-                WHERE r.`student_id` = s.`id` 
+                FROM Results r 
+                WHERE r.student_id = s.id
             )
-            ORDER BY s.`name`
-        """)
-        results = cursor.fetchall()
-        conn.close()
-        return results
+            ORDER BY s.name
+        """
 
-    def get_results_by_student_id(self, student_id):
-        conn = sqlite3.connect(self.db_name, check_same_thread=False)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-                        SELECT section, pol_c, chl_c, umn_c, pol, chl, umn 
-                        FROM Results 
-                        WHERE student_id = ? 
-                        ORDER BY id
-                    ''', (student_id,))
-
-        rows = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-        grouped_results = defaultdict(lambda: [0] * 6)
-        result_counter = defaultdict(lambda: [0] * 3)
-        for row in rows:
-            r = Result(row)
-            grouped_results[r.full_section][0] = max(r.pol_c, grouped_results[r.full_section][0])
-            grouped_results[r.full_section][1] = max(r.chl_c, grouped_results[r.full_section][1])
-            grouped_results[r.full_section][2] = max(r.umn_c, grouped_results[r.full_section][2])
-            grouped_results[r.full_section][3] += r.pol
-            grouped_results[r.full_section][4] += r.chl
-            grouped_results[r.full_section][5] += r.umn
-            result_counter[r.full_section][0] += 1 if r.pol != 0 or r.pol_c != 0 else 0
-            result_counter[r.full_section][1] += 1 if r.chl != 0 or r.chl_c != 0 else 0
-            result_counter[r.full_section][2] += 1 if r.umn != 0 or r.umn_c != 0 else 0
-
-        results = []
-        for section, metrics in grouped_results.items():
-            r = Result([section] + [*metrics[:3]] +
-                 [metrics[3] / result_counter[section][0] if result_counter[section][0] != 0 else metrics[3]] +
-                 [metrics[4] / result_counter[section][1] if result_counter[section][1] != 0 else metrics[4]] +
-                 [metrics[5] / result_counter[section][2] if result_counter[section][2] != 0 else metrics[5]])
-            results.append(r)
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            results = [row[0] for row in cursor.fetchall()]
 
         return results
+
+    def get_results_by_student_id(self, student_id: int) -> list[Result]:
+        query = '''
+            SELECT section, pol_c, chl_c, umn_c, pol, chl, umn 
+            FROM Results 
+            WHERE student_id = ? 
+            ORDER BY section
+        '''
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (student_id,))
+            rows = cursor.fetchall()
+
+        return [Result(row) for row in rows]
 
 
 if __name__ == "__main__":
-    dm = DiagnosticModule()
-    dm.display_student_results()
+    dm = Repository()
