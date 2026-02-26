@@ -1,4 +1,5 @@
 import json
+import random
 import sqlite3
 from collections import defaultdict
 from datetime import datetime
@@ -320,19 +321,29 @@ class DiagnosticModule:
             (`id`, `student_id`, `section`, `test_date`, `pol_c`, `chl_c`, `umn_c`, `pol`, `chl`, `umn`)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', results)
 
-    def generate_test(self, question_type: str, difficulty: int) -> list[Question]:
+    def generate_test(self, question_type: str) -> tuple[list[Question], int]:
+        difficulties = self.get_difficulties(True)[question_type]
+        max_d: int = max(difficulties)
+        min_d: int = min(difficulties)
+        mid_d: int = random.choice([d for d in difficulties if d != max_d or d != min_d])
+        diffs = (min_d, mid_d, max_d)
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
-
-        cursor.execute(f'''
-            SELECT * FROM `Questions` 
-            WHERE `type`=? AND `difficulty`=? 
-            ORDER BY RANDOM() LIMIT 3''',
-                       (question_type, difficulty,))
-        questions = [Question(q) for q in cursor.fetchall()]
+        questions = []
+        q_ids = []
+        for diff in diffs:
+            cursor.execute(f'''
+                SELECT * FROM `Questions` 
+                WHERE `type`=? AND `difficulty`=? 
+                ORDER BY RANDOM() LIMIT 1''',
+                           (question_type, diff,))
+            q = Question(cursor.fetchone())
+            if q.id not in q_ids:
+                q_ids.append(q.id)
+                questions.append(q)
         conn.close()
 
-        return questions
+        return questions, max_d
 
     def get_additional_metric(self, student_id, metric, section) -> float:
         conn = sqlite3.connect(self.db_name)
@@ -355,15 +366,29 @@ class DiagnosticModule:
     def save_results(self, student_id, section, pol_c, chl_c, umn_c, pol, chl, umn):
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
-
         current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute(
-            '''
-            INSERT INTO `Results`
-            (`student_id`, `section`, `test_date`, `pol_c`, `chl_c`, `umn_c`, `pol`, `chl`, `umn`)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-            (student_id, section, current_date, pol_c, chl_c, umn_c, pol, chl, umn,))
+
+        cursor.execute('SELECT * FROM `Results` WHERE `student_id`=? AND `section`=?',
+                       (student_id, section,))
+        row = cursor.fetchone()
+        if row is None:
+            cursor.execute(
+                '''
+                INSERT INTO `Results`
+                (`student_id`, `section`, `test_date`, `pol_c`, `chl_c`, `umn_c`, `pol`, `chl`, `umn`)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (student_id, section, current_date, pol_c, chl_c, umn_c, pol, chl, umn,))
+        else:
+            cursor.execute('''
+            UPDATE `Results` 
+            SET `test_date`=?, `pol_c`=?, `chl_c`=?, `umn_c`=?, `pol`=?, `chl`=?, `umn`=?
+            WHERE `id`=?
+            ''', (current_date,
+                  max(row[4], pol_c), max(row[5], chl_c), max(row[6], umn_c),
+                  (row[7] + pol) // 1, (row[8] + chl) // 1, (row[9] + umn) // 1,
+                  row[0],))
+
 
         conn.commit()
         conn.close()
@@ -416,7 +441,7 @@ class DiagnosticModule:
             print_formatted_row("CHL", chl_values)
             print_formatted_row("UMN", umn_values)
 
-    def get_difficulties(self, is_need_int=False) -> dict[str, list[str]]:
+    def get_difficulties(self, is_need_int=False) -> dict[str, list] | dict[str, list]:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute('''

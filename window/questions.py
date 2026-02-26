@@ -8,7 +8,7 @@ from .base import ChildWindow
 
 
 class QuestionsWindow(ChildWindow):
-    def __init__(self, parent, questions: list[Question], w=300, h=400):
+    def __init__(self, parent, questions: list[Question], max_d, w=300, h=400):
         super().__init__(parent, w, h)
         self.questions = questions
         self.index = 0
@@ -19,6 +19,8 @@ class QuestionsWindow(ChildWindow):
         self.len = len(questions)
         self.timer_active = False
         self.current_loop = None
+        self.max_difficulty = max_d
+        self.result = 0
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(10, weight=1)
@@ -84,7 +86,7 @@ class QuestionsWindow(ChildWindow):
         if self.index < (self.len - 1):
             self.index += 1
             self.current_q = self.questions[self.index]
-        self.__set_new_time()
+        # self.__set_new_time()
 
     def __update_q(self):
         self.title_label.config(text=f"№ {self.index + 1}\tТип: {self.type}")
@@ -99,6 +101,7 @@ class QuestionsWindow(ChildWindow):
     def __is_correct_answer(self):
         if self.current_q.is_correct_answer(self.option.get()):
             self.correct_answers += 1
+            self.result = round(self.current_q.difficulty / self.max_difficulty, 2)
 
     def __next_q(self):
         self.__stop_timer()
@@ -107,7 +110,6 @@ class QuestionsWindow(ChildWindow):
             return
         self.__is_correct_answer()
         self.__increment_index()
-        self.timer_label.config(text=str(self.timer))
         self.__update_q()
         self.__start_timer()
 
@@ -119,11 +121,12 @@ class QuestionsWindow(ChildWindow):
             title=f"Результат {self.type}",
             message=f"Правильных ответов: {self.correct_answers}\n"
                     f"Неправильных ответов: {self.len - self.correct_answers}\n\n"
-                    f"Баллов: {round(self.correct_answers / 3 * 10) / 10}")
+                    f"Баллов: {self.result}")
         self.return_to_main_to_main()
 
     def __save_test(self):
-        self.parent.save_results(round(self.correct_answers / 3 * 10) / 10)
+        self.parent.save_results(self.result)
 
     def __set_new_time(self):
-        self.timer = self.index + 1
+        self.timer = 18
+        # self.timer_label.config(text=str(self.timer))

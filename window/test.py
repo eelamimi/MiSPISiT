@@ -14,13 +14,12 @@ class Test(ChildWindow):
         self.difficulties_by_metric = module.get_difficulties()
         metrics = ['POL', 'CHL', 'UMN']
         self.metric = tk.StringVar(value='POL')
-        self.difficulty = tk.StringVar(value='1')
+        self.max_difficulty = 0
 
         self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(5, weight=1)
         self.grid_rowconfigure(8, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=0)
-        self.grid_columnconfigure(2, weight=0)
         self.grid_columnconfigure(3, weight=1)
 
         self.student_label = ttk.Label(self, text="Фамилия студента:", anchor='e')
@@ -42,14 +41,6 @@ class Test(ChildWindow):
         self.metric_label.grid(row=4, column=1, pady=10, padx=5, sticky='ew')
         self.metric_combobox = ttk.Combobox(self, textvariable=self.metric, values=metrics, state='readonly', width=17)
         self.metric_combobox.grid(row=4, column=2, pady=10, padx=5, sticky='ew')
-        self.metric_combobox.bind('<<ComboboxSelected>>', self.__on_combobox_selected_update_difficulties)
-
-        self.difficulty_label = ttk.Label(self, text="Сложность:", anchor='e')
-        self.difficulty_label.grid(row=5, column=1, pady=10, padx=5, sticky='ew')
-        self.difficulty_combobox = ttk.Combobox(self, textvariable=self.difficulty,
-                                                values=self.difficulties_by_metric[self.metric.get()], state='readonly',
-                                                width=17)
-        self.difficulty_combobox.grid(row=5, column=2, pady=10, padx=5, sticky='ew')
 
         self.start_test_button = tk.Button(self, text="Начать тестирование", command=self.start_test_action)
         self.start_test_button.grid(row=6, column=1, columnspan=2, pady=(20, 0))
@@ -64,11 +55,14 @@ class Test(ChildWindow):
             messagebox.showerror("Ошибка", e)
             return
         self.withdraw()
-        questions = self.module.generate_test(self.metric.get(), int(self.difficulty.get()))
-        questions_window = QuestionsWindow(self, questions, 300, 650)
+        questions, self.max_difficulty = self.module.generate_test(self.metric.get())
+        questions_window = QuestionsWindow(self, questions, self.max_difficulty, 300, 650)
         questions_window.show()
 
     def save_results(self, result):
+        if self.max_difficulty == 0:
+            raise SystemExit("Как")
+
         student_name = self.student_entry.get().strip()
         student_id = self.module.get_student_id_by_name(student_name)
         if student_id is None or student_id == -1:
@@ -80,13 +74,13 @@ class Test(ChildWindow):
         metric = self.metric.get()
         if metric == 'POL':
             pol = result
-            pol_c = int(self.difficulty.get())
+            pol_c = self.max_difficulty
         elif metric == 'CHL':
             chl = result
-            chl_c = int(self.difficulty.get())
+            chl_c = self.max_difficulty
         else:
             umn = result
-            umn_c = int(self.difficulty.get())
+            umn_c = self.max_difficulty
         self.module.save_results(student_id, full_section, pol_c, chl_c, umn_c, pol, chl, umn)
 
     def __validate_entries(self):
@@ -96,9 +90,6 @@ class Test(ChildWindow):
             raise ValueError("Некорректно введён раздел, используйте числа")
         if Test.__section_check(self.subsection_entry.get().strip()):
             raise ValueError("Некорректно введён подраздел, используйте числа")
-
-    def __on_combobox_selected_update_difficulties(self, *args):
-        self.difficulty_combobox.config(values=self.difficulties_by_metric[self.metric.get()])
 
     @staticmethod
     def __section_check(s):
