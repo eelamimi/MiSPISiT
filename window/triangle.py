@@ -5,9 +5,9 @@ from window.child import ChildWindow
 
 
 class TriangleWindow(ChildWindow):
-    def __init__(self, parent, module, name, pol_c_f, chl_c_f, umn_c_f, pol_f, chl_f, umn_f):
+    def __init__(self, parent, name, pol_c_f, chl_c_f, umn_c_f, pol_f, chl_f, umn_f):
         super().__init__(parent, 600, 500)
-        self.title = f"Успешность студента {name}"
+        self.title(f"Успешность студента {name}")
         self.__draw_triangles(pol_c_f, chl_c_f, umn_c_f,
                               round(pol_c_f * pol_f, 2),
                               round(chl_c_f * chl_f, 2),
@@ -56,7 +56,7 @@ class TriangleWindow(ChildWindow):
         self.ax.set_ylabel('SU')
         self.ax.set_zlabel('SP')
 
-        success = self.__calculate_volume(p_c, c_c, u_c) / self.__calculate_volume( m_p_c, m_c_c, m_u_c)
+        success = self.__calculate_volume(p_c, c_c, u_c) / self.__calculate_volume(m_p_c, m_c_c, m_u_c)
         self.ax.set_title(f'У(УК) = {round(success, 2)}')
 
     def __calculate_volume(self, p_c, c_c, u_c) -> int:

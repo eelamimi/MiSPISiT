@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
-from window.child import ChildWindow
 from db.repository import Repository
+from window.child import ChildWindow
 from window.map import MapWindow
 
 
@@ -41,4 +41,3 @@ class Tree(ChildWindow):
 
     def show_main(self):
         self.deiconify()
-        

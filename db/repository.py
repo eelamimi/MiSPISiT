@@ -450,10 +450,10 @@ class Repository:
         '''
 
         with sqlite3.connect(self.db_name) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(query, (student_name,))
-                student_id = cursor.fetchone()[0]
-                conn.commit()
+            cursor = conn.cursor()
+            cursor.execute(query, (student_name,))
+            student_id = cursor.fetchone()[0]
+            conn.commit()
 
         return student_id
 

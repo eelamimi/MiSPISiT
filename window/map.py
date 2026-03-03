@@ -137,7 +137,7 @@ class MapWindow(ChildWindow):
 
     def exit_action(self):
         self.destroy()
-        triangle_window = TriangleWindow(self.parent, self.module, self.name,
+        triangle_window = TriangleWindow(self.parent, self.name,
                                          self.pol_c_f, self.chl_c_f, self.umn_c_f,
                                          self.pol_f, self.chl_f, self.umn_f)
         triangle_window.show()

@@ -56,10 +56,10 @@ class Test(ChildWindow):
             return
         self.withdraw()
         questions, self.max_difficulty = self.module.generate_test(self.metric.get())
-        questions_window = QuestionsWindow(self.parent, questions, self.max_difficulty, 300, 650)
+        questions_window = QuestionsWindow(self.parent, self, questions, self.max_difficulty, 300, 650)
         questions_window.show()
 
-    def save_results(self, result):
+    def save_result(self, result):
         if self.max_difficulty == 0:
             raise SystemExit("Как")
 
