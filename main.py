@@ -1,21 +1,17 @@
 import tkinter as tk
-from tkinter import messagebox
 
-from diagnostic_module.tree import DiagnosticModuleTree
-from window.base import BaseWindow
+from db.repository import Repository
+from window.main import MainWindow
 from window.test import Test
 from window.tree import Tree
 
 
-class DigitalTwin(tk.Tk, BaseWindow):
-    def __init__(self, module: DiagnosticModuleTree, w=400, h=300,
+class DigitalTwin(MainWindow):
+    def __init__(self, module: Repository, w=400, h=300,
                  test_class=Test, w_test=300, h_test=400,
                  tree_class=Tree, w_tree=300, h_tree=400):
-        super().__init__()
+        super().__init__(w, h)
         self.title("Цифровой двойник студента")
-        self.resizable(False, False)
-        self.protocol("WM_DELETE_WINDOW", self.exit_action)
-        self.center_window(self, w, h)
         self.module = module
 
         self.grid_rowconfigure(0, weight=1)
@@ -48,20 +44,10 @@ class DigitalTwin(tk.Tk, BaseWindow):
         tree_window = self.tree_class(self, self.module, self.w_test, self.h_test)
         tree_window.show()
 
-    def show_main(self):
-        self.deiconify()
-
-    def exit_action(self):
-        if messagebox.askyesno("Выход", "Вы уверены, что хотите выйти?"):
-            self.destroy()
-
-    def quit(self):
-        self.exit_action()
-
 
 if __name__ == "__main__":
     root = DigitalTwin(
-        DiagnosticModuleTree(init_database=True),
+        Repository(init_database=True),
         400, 300,
         Test, 300, 340,
         Tree, 300, 400)

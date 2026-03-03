@@ -4,12 +4,12 @@ import tkinter as tk
 from tkinter import messagebox as mb
 
 from model.question import Question
-from .base import ChildWindow
+from window.child import ChildChildWindow
 
 
-class QuestionsWindow(ChildWindow):
-    def __init__(self, parent, questions: list[Question], max_d, w=300, h=400):
-        super().__init__(parent, w, h)
+class QuestionsWindow(ChildChildWindow):
+    def __init__(self, parent_of_parent, parent, questions: list[Question], max_d, w=300, h=400):
+        super().__init__(parent_of_parent, parent, w, h)
         self.questions = questions
         self.index = 0
         self.current_q = questions[self.index]
@@ -58,7 +58,7 @@ class QuestionsWindow(ChildWindow):
             self.after(0, lambda l=self.timer_label: l.config(text=str(int(self.timer_label['text']) - 1)))
 
         if self.timer_active:
-            self.after(0, lambda: self.__next_q())
+            self.after(0, lambda: self.__stop_test())
 
     def __start_timer(self):
         self.timer_active = True
@@ -122,10 +122,10 @@ class QuestionsWindow(ChildWindow):
             message=f"Правильных ответов: {self.correct_answers}\n"
                     f"Неправильных ответов: {self.len - self.correct_answers}\n\n"
                     f"Баллов: {self.result}")
-        self.return_to_main_to_main()
+        self.return_to_main()
 
     def __save_test(self):
-        self.parent.save_results(self.result)
+        self.parent.save_result(self.result)
 
     def __set_new_time(self):
         self.timer = 18
