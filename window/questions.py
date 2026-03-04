@@ -1,4 +1,5 @@
 import asyncio
+import textwrap
 import threading
 import tkinter as tk
 from tkinter import messagebox as mb
@@ -91,9 +92,9 @@ class QuestionsWindow(ChildChildWindow):
     def __update_q(self):
         self.title_label.config(text=f"№ {self.index + 1}\tТип: {self.type}")
         self.text_label.config(text=self.current_q.text)
-        self.first_option.config(text=self.current_q.options[1])
-        self.second_option.config(text=self.current_q.options[2])
-        self.third_option.config(text=self.current_q.options[3])
+        self.first_option.config(text=textwrap.fill(self.current_q.options[1], 30))
+        self.second_option.config(text=textwrap.fill(self.current_q.options[2], 30))
+        self.third_option.config(text=textwrap.fill(self.current_q.options[3], 30))
         if self.index >= (self.len - 1):
             self.next_q_btn.config(text="Закончить тестирование", command=self.__stop_test)
         self.__update_width()
@@ -128,5 +129,11 @@ class QuestionsWindow(ChildChildWindow):
         self.parent.save_result(self.result)
 
     def __set_new_time(self):
-        self.timer = 18
+        self.timer = sum(q.difficulty for q in self.questions) * 3
         # self.timer_label.config(text=str(self.timer))
+
+    def exit_action(self):
+        self.__stop_timer()
+        self.result = 0
+        self.__save_test()
+        self.return_to_main()

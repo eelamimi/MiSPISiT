@@ -33,3 +33,6 @@ class ChildChildWindow(ChildWindow):
         self.destroy()
         self.parent.destroy()
         self.parent_of_parent.show_main()
+
+    def exit_action(self):
+        self.return_to_main()

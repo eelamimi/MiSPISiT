@@ -56,8 +56,12 @@ class TriangleWindow(ChildWindow):
         self.ax.set_ylabel('SU')
         self.ax.set_zlabel('SP')
 
-        success = self.__calculate_volume(p_c, c_c, u_c) / self.__calculate_volume(m_p_c, m_c_c, m_u_c)
-        self.ax.set_title(f'У(УК) = {round(success, 2)}')
+        little_triangle = self.__calculate_volume(p_c, c_c, u_c)
+        big_triangle = self.__calculate_volume(m_p_c, m_c_c, m_u_c)
+        success = round(little_triangle / big_triangle, 2)
+        little_triangle = round(self.__calculate_volume(p_c, c_c, u_c), 2)
+        big_triangle = round(self.__calculate_volume(m_p_c, m_c_c, m_u_c), 2)
+        self.ax.set_title(f'У(УК) = {little_triangle} / {big_triangle} = {success}')
 
     def __calculate_volume(self, p_c, c_c, u_c) -> int:
         s = c_c * u_c / 2

@@ -116,7 +116,8 @@ class MapWindow(ChildWindow):
 
             if m != 0:
                 self.canvas.create_rectangle(x0_both, y0_lower, x1_both, y1_lower, outline='black', fill='gray')
-            self.canvas.create_rectangle(x0_both, y0_upper, x1_both, y1_upper, outline='black', fill='white')
+            if m != 1:
+                self.canvas.create_rectangle(x0_both, y0_upper, x1_both, y1_upper, outline='black', fill='white')
 
             x_t = (x0_both + x1_both) / 2
             m_t = "POL" if i == 0 else "CHL" if i == 1 else "UMN"

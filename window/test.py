@@ -92,7 +92,7 @@ class Test(ChildWindow):
 
     @staticmethod
     def __section_check(s):
-        return s == "" or not all(c.isdigit() for c in s)
+        return s == "" or not all(c.isdigit() for c in s) or not (1 <= int(s) <= 9)
 
     def show_main(self):
         self.deiconify()
