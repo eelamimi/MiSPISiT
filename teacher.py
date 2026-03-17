@@ -82,7 +82,7 @@ class QuestionApp(MainWindow):
         tk.Button(button_frame, text="Добавить", command=self.add_question).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Редактировать", command=self.edit_question).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Удалить", command=self.delete_question).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text="Обновить", command=self.load_data).pack(side=tk.LEFT, padx=5)
+        # tk.Button(button_frame, text="Обновить", command=self.load_data).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Закрыть", command=self.exit_action, width=15).pack(side=tk.RIGHT, padx=5)
 
     def create_context_menu(self):
@@ -127,10 +127,15 @@ class QuestionApp(MainWindow):
 
     def edit_question(self):
         question_id = self._get_question_id("редактирования")
+        if not question_id:
+            return
+
         self.open_question_window(question_id)
 
     def delete_question(self):
         question_id = self._get_question_id("удаления")
+        if not question_id:
+            return
 
         if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите удалить этот вопрос?"):
             self.repository.delete_question_by_id(question_id)
@@ -143,7 +148,7 @@ class QuestionApp(MainWindow):
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Предупреждение", f"Выберите вопрос для {message_action}")
-            return
+            return None
         item = self.tree.item(selected[0])
         return item['values'][0]
 
