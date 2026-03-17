@@ -67,6 +67,9 @@ class QuestionApp(MainWindow):
         self.tree.column("difficulty", width=80, anchor=tk.CENTER)
         self.tree.column("type", width=80, anchor=tk.CENTER)
 
+        self.tree.tag_configure('odd_row', background='lightgray')
+        self.tree.tag_configure('even_row', background='white')
+
         self.tree.pack(fill=tk.BOTH, expand=True)
 
         scroll_y.config(command=self.tree.yview)
@@ -74,12 +77,13 @@ class QuestionApp(MainWindow):
         self.tree.bind("<Double-1>", lambda e: self.edit_question())
 
         button_frame = tk.Frame(self)
-        button_frame.pack(fill=tk.X, padx=10, pady=5)
+        button_frame.pack(fill=tk.X, padx=5, pady=5)
 
         tk.Button(button_frame, text="Добавить", command=self.add_question).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Редактировать", command=self.edit_question).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Удалить", command=self.delete_question).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Обновить", command=self.load_data).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Закрыть", command=self.exit_action, width=15).pack(side=tk.RIGHT, padx=5)
 
     def create_context_menu(self):
         self.context_menu = tk.Menu(self, tearoff=0)
@@ -104,10 +108,10 @@ class QuestionApp(MainWindow):
             self.difficulty_var.get(),
             self.metric_var.get())
 
-        for q in questions:
+        for i, q in enumerate(questions):
             self.tree.insert("", tk.END,
                              values=(q.id, q.text, q.format_options(), q.answer, q.difficulty, q.type),
-                             tags=(q.dump_options(),))
+                             tags=(q.dump_options(), 'odd_row' if i % 2 == 0 else 'even_row'))
 
     def apply_filters(self):
         self.load_data()
