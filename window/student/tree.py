@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from db.repository import Repository
 from window.child import ChildWindow
-from window.map import MapWindow
+from window.student.map import MapWindow
 
 
 class Tree(ChildWindow):

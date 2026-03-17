@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from model.result import Result
 from window.child import ChildWindow
-from window.triangle import TriangleWindow
+from window.student.triangle import TriangleWindow
 
 
 class MapWindow(ChildWindow):

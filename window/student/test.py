@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 
 from db.repository import Repository
 from window.child import ChildWindow
-from window.questions import QuestionsWindow
+from window.student.questions import QuestionsWindow
 
 
 class Test(ChildWindow):

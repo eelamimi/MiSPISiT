@@ -1,11 +1,11 @@
 import json
 import random
 import sqlite3
-from collections import defaultdict
 from datetime import datetime
 
 from model.question import Question
 from model.result import Result
+
 
 class Repository:
     def __init__(self, db_name='education.db', init_database=False):
@@ -344,7 +344,7 @@ class Repository:
 
         return [min_d, mid_d, max_d]
 
-    def __get_questions_for_difficulties(self, question_type: str,difficulties: list[int]) -> list[Question]:
+    def __get_questions_for_difficulties(self, question_type: str, difficulties: list[int]) -> list[Question]:
         query = '''
             SELECT * FROM Questions 
             WHERE type = ? AND difficulty = ? 
@@ -443,11 +443,7 @@ class Repository:
         if existing_id != -1:
             return existing_id
 
-        query = '''
-            INSERT INTO Students (name)
-            VALUES (?)
-            RETURNING id
-        '''
+        query = "INSERT INTO Students (name) VALUES (?) RETURNING id"
 
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
@@ -458,7 +454,7 @@ class Repository:
         return student_id
 
     def get_student_id_by_name(self, student_name: str):
-        query = 'SELECT id FROM Students WHERE name = ?'
+        query = "SELECT id FROM Students WHERE name = ?"
 
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
@@ -500,6 +496,68 @@ class Repository:
             rows = cursor.fetchall()
 
         return [Result(row) for row in rows]
+
+    """===   TEACHER REGION   ==="""
+
+    def get_questions_with_filters(self, text, difficulty, metric) -> list[Question]:
+        query = "SELECT * FROM Questions WHERE 1=1"
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            params = []
+
+            if text:
+                query += " AND text LIKE ?"
+                params.append(f"%{text}%")
+
+            if difficulty != "Все":
+                query += " AND difficulty = ?"
+                params.append(int(difficulty))
+
+            if metric != "Все":
+                query += " AND type = ?"
+                params.append(metric)
+
+            query += " ORDER BY id"
+
+            cur.execute(query, params)
+            return [Question(q) for q in cur.fetchall()]
+
+    def get_question_by_id(self, question_id):
+        query = "SELECT * FROM Questions WHERE id=?"
+        params = (question_id,)
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            return Question(cur.fetchone())
+
+    def update_question(self, q_id, q_text, q_options, q_correct, q_difficulty, q_type):
+        query = "UPDATE Questions SET text=?, options=?, correct_answer=?, difficulty=?, type=? WHERE id=?"
+        params = (q_text, json.dumps(q_options, ensure_ascii=False), q_correct, q_difficulty, q_type, q_id)
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            conn.commit()
+
+    def create_question(self, q_text, q_options, q_correct, q_difficulty, q_type):
+        query = "INSERT INTO Questions(text, options, correct_answer, difficulty, type) VALUES (?, ?, ?, ?, ?)"
+        params = (q_text, json.dumps(q_options, ensure_ascii=False), q_correct, q_difficulty, q_type)
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            conn.commit()
+
+    def delete_question_by_id(self, q_id):
+        query = "DELETE FROM Questions WHERE id = ?"
+        params = (q_id,)
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            conn.commit()
 
 
 if __name__ == "__main__":
