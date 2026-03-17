@@ -122,11 +122,11 @@ class QuestionApp(MainWindow):
         self.open_question_window()
 
     def edit_question(self):
-        question_id = self._get_question_id("Выберите вопрос для редактирования")
+        question_id = self._get_question_id("редактирования")
         self.open_question_window(question_id)
 
     def delete_question(self):
-        question_id = self._get_question_id("Выберите вопрос для удаления")
+        question_id = self._get_question_id("удаления")
 
         if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите удалить этот вопрос?"):
             self.repository.delete_question_by_id(question_id)
@@ -135,10 +135,10 @@ class QuestionApp(MainWindow):
             self.load_data()
             messagebox.showinfo("Успех", "Вопрос удален")
 
-    def _get_question_id(self, message):
+    def _get_question_id(self, message_action):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("Предупреждение", message)
+            messagebox.showwarning("Предупреждение", f"Выберите вопрос для {message_action}")
             return
         item = self.tree.item(selected[0])
         return item['values'][0]
