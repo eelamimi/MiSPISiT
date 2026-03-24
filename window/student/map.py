@@ -24,23 +24,23 @@ class MapWindow(ChildWindow):
 
     def __draw_map_and_center(self):
         x, y = 20, self.h - self.pady - self.h_sq
-        sepx = 20
+        separator_x = 20
 
         amount_of_sections = 0
-        children_coords = defaultdict(list)
+        children_coordinates = defaultdict(list)
         grouped = defaultdict(list)
-        parent_coords = []
+        parent_coordinates = []
 
         for result in self.results:
             if '.' in result.full_section:
                 # отрисовка
-                coords = self.__draw_rectangle(x, y, result)
-                x += self.w_sq + sepx
+                coordinates = self.__draw_rectangle(x, y, result)
+                x += self.w_sq + separator_x
 
                 # группировка
                 section = result.full_section[:-2]
                 grouped[section].append(result)
-                children_coords[section].append(coords)
+                children_coordinates[section].append(coordinates)
         w = x
         parent_results = []
         for section, results in sorted(grouped.items(), key=lambda item: item[0]):
@@ -49,62 +49,56 @@ class MapWindow(ChildWindow):
                 pol += result.pol
                 chl += result.chl
                 umn += result.umn
-                pol_c += result.pol_c
-                chl_c += result.chl_c
-                umn_c += result.umn_c
+                pol_c = max(result.pol_c, pol_c)
+                chl_c = max(result.chl_c, chl_c)
+                umn_c = max(result.umn_c, umn_c)
             pol /= len(results)
             chl /= len(results)
             umn /= len(results)
-            pol_c /= len(results)
-            chl_c /= len(results)
-            umn_c /= len(results)
             parent_results.append(Result((
                 section,
                 round(pol_c, 2), round(chl_c, 2), round(umn_c, 2),
                 round(pol, 2), round(chl, 2), round(umn, 2))))
             amount_of_sections += 1
 
-        x = (x - amount_of_sections * self.w_sq - (amount_of_sections - 1) * sepx) / 2
+        x = (x - amount_of_sections * self.w_sq - (amount_of_sections - 1) * separator_x) / 2
         y = self.h - self.pady - self.h_sq - (self.h - (self.pady + self.h_sq) * 2 - self.h_sq) / 2 - self.h_sq
 
         self.pol_f = self.chl_f = self.umn_f = self.pol_c_f = self.chl_c_f = self.umn_c_f = 0
 
         for result in parent_results:
-            coords = self.__draw_rectangle(x, y, result)
-            x += self.w_sq + sepx
+            coordinates = self.__draw_rectangle(x, y, result)
+            x += self.w_sq + separator_x
 
-            for child_coords in children_coords[result.full_section]:
-                self.__draw_line(child_coords[0], coords[1])
-            parent_coords.append(coords[0])
+            for child_coordinates in children_coordinates[result.full_section]:
+                self.__draw_line(child_coordinates[0], coordinates[1])
+            parent_coordinates.append(coordinates[0])
 
             # подсчёт за весь курс
             self.pol_f += result.pol
             self.chl_f += result.chl
             self.umn_f += result.umn
-            self.pol_c_f += result.pol_c
-            self.chl_c_f += result.chl_c
-            self.umn_c_f += result.umn_c
+            self.pol_c_f = max(result.pol_c, self.pol_c_f)
+            self.chl_c_f = max(result.chl_c, self.chl_c_f)
+            self.umn_c_f = max(result.umn_c, self.umn_c_f)
 
-        self.pol_c_f = round(self.pol_c_f / amount_of_sections, 2)
-        self.chl_c_f = round(self.chl_c_f / amount_of_sections, 2)
-        self.umn_c_f = round(self.umn_c_f / amount_of_sections, 2)
         self.pol_f = round(self.pol_f / amount_of_sections, 2)
         self.chl_f = round(self.chl_f / amount_of_sections, 2)
         self.umn_f = round(self.umn_f / amount_of_sections, 2)
 
-        final_coords = self.__draw_rectangle(
+        final_coordinates = self.__draw_rectangle(
             w // 2 - self.w_sq // 2, self.pady,
             Result(('Учебный курс',
                     self.pol_c_f, self.chl_c_f, self.umn_c_f,
                     self.pol_f, self.chl_f, self.umn_f)))
 
-        for coords in parent_coords:
-            self.__draw_line(coords, final_coords[1])
+        for coordinates in parent_coordinates:
+            self.__draw_line(coordinates, final_coordinates[1])
 
         self.center_window(self, w, self.h)
 
-    def __draw_rectangle(self, x_init: float, y_init: float, result: Result) -> tuple[
-        tuple[float, float], tuple[float, float]]:
+    def __draw_rectangle(self, x_init: float, y_init: float, result: Result) ->\
+            tuple[tuple[float, float], tuple[float, float]]:
         y0_upper = y_init
         y1_lower = y0_upper + self.h_sq
         for i, mc in enumerate(((result.pol, result.pol_c), (result.chl, result.chl_c), (result.umn, result.umn_c))):
@@ -133,8 +127,8 @@ class MapWindow(ChildWindow):
 
         return (x_t_section, y_t_section - 10), (x_t_section, y1_lower + 20)
 
-    def __draw_line(self, coords0: tuple[float, float], coords1: tuple[float, float]) -> None:
-        self.canvas.create_line(coords0, coords1, fill='black')
+    def __draw_line(self, coordinates0: tuple[float, float], coordinates1: tuple[float, float]) -> None:
+        self.canvas.create_line(coordinates0, coordinates1, fill='black')
 
     def exit_action(self):
         self.destroy()

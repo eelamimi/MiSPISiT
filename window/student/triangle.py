@@ -6,7 +6,10 @@ from window.child import ChildWindow
 
 class TriangleWindow(ChildWindow):
     def __init__(self, parent, name, pol_c_f, chl_c_f, umn_c_f, pol_f, chl_f, umn_f):
-        super().__init__(parent, 600, 500)
+        self.w = 700
+        self.h = 600
+        super().__init__(parent, self.w, self.h)
+        self.resizable(True, True)
         self.title(f"Успешность студента {name}")
         self.__draw_triangles(pol_c_f, chl_c_f, umn_c_f,
                               round(pol_c_f * pol_f, 2),
@@ -14,7 +17,7 @@ class TriangleWindow(ChildWindow):
                               round(umn_c_f * umn_f, 2))
 
     def __draw_triangles(self, m_p_c, m_c_c, m_u_c, p_c, c_c, u_c):
-        fig = Figure(figsize=(6, 5), dpi=100)
+        fig = Figure(figsize=(7, 6), dpi=100)
         self.ax = fig.add_subplot(111, projection='3d')
 
         self.__draw_triangle(m_c_c, m_u_c, m_p_c)
@@ -56,14 +59,31 @@ class TriangleWindow(ChildWindow):
         self.ax.set_ylabel('SU')
         self.ax.set_zlabel('SP')
 
+        self.ax.set_title(self.get_title_with_s_w_v(p_c, c_c, u_c, m_p_c, m_c_c, m_u_c))
+
+    def get_title_with_s_w_v(self, p_c, c_c, u_c, m_p_c, m_c_c, m_u_c) -> str:
+        little_triangle, big_triangle, success = self.__calculate_s(p_c, c_c, u_c, m_p_c, m_c_c, m_u_c)
+        w = self.__calculate_w(p_c, c_c, u_c, m_p_c, m_c_c, m_u_c)
+        v = self.__calculate_v(p_c, c_c, u_c, m_p_c, m_c_c, m_u_c)
+        return (f'У(УК) = {little_triangle} / {big_triangle} = {success}\n'
+                f'W = ({p_c} + {c_c} + {u_c}) / ({m_p_c} + {m_c_c} + {m_u_c}) = {w}\n'
+                f'V = sqrt({p_c}^2 + {c_c}^2 + {u_c}^2) / sqrt({m_p_c}^2 + {m_c_c}^2 + {m_u_c}^2) = {v}')
+
+    @staticmethod
+    def __calculate_v(p_c, c_c, u_c, m_p_c, m_c_c, m_u_c):
+        return round(sum((p_c ** 2, c_c ** 2, u_c ** 2)) / sum((m_p_c ** 2, m_c_c ** 2, m_u_c ** 2)), 2)
+
+    @staticmethod
+    def __calculate_w(p_c, c_c, u_c, m_p_c, m_c_c, m_u_c):
+        return round(sum((p_c, c_c, u_c)) / sum((m_p_c, m_c_c, m_u_c)), 2)
+
+    def __calculate_s(self, p_c, c_c, u_c, m_p_c, m_c_c, m_u_c) -> tuple[float, float, float]:
         little_triangle = self.__calculate_volume(p_c, c_c, u_c)
         big_triangle = self.__calculate_volume(m_p_c, m_c_c, m_u_c)
-        success = round(little_triangle / big_triangle, 2)
-        little_triangle = round(self.__calculate_volume(p_c, c_c, u_c), 2)
-        big_triangle = round(self.__calculate_volume(m_p_c, m_c_c, m_u_c), 2)
-        self.ax.set_title(f'У(УК) = {little_triangle} / {big_triangle} = {success}')
+        return round(little_triangle, 2), round(big_triangle, 2), round(little_triangle / big_triangle, 2)
 
-    def __calculate_volume(self, p_c, c_c, u_c) -> int:
+    @staticmethod
+    def __calculate_volume(p_c, c_c, u_c) -> int:
         s = c_c * u_c / 2
         v = s * p_c / 3
-        return round(v, 2)
+        return v

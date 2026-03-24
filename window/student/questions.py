@@ -11,6 +11,7 @@ from window.child import ChildChildWindow
 class QuestionsWindow(ChildChildWindow):
     def __init__(self, parent_of_parent, parent, questions: list[Question], max_d, w=300, h=400):
         super().__init__(parent_of_parent, parent, w, h)
+        self.w, self.h = w, h
         self.questions = questions
         self.index = 0
         self.current_q = questions[self.index]
@@ -77,11 +78,14 @@ class QuestionsWindow(ChildChildWindow):
             self.current_loop.call_soon_threadsafe(self.current_loop.stop)
             self.current_loop = None
 
-    def __update_width(self):
+    def __update_width_and_height(self):
         self.update_idletasks()
+
         new_w = max(self.text_label.winfo_reqwidth(), self.first_option.winfo_reqwidth(),
                     self.second_option.winfo_reqwidth(), self.third_option.winfo_reqwidth()) + 50
-        self.center_window(self, new_w if new_w > 300 else 300, 400)
+        new_w = new_w if new_w > self.w else self.w
+
+        self.center_window(self, new_w, self.h)
 
     def __increment_index(self):
         if self.index < (self.len - 1):
@@ -92,12 +96,12 @@ class QuestionsWindow(ChildChildWindow):
     def __update_q(self):
         self.title_label.config(text=f"№ {self.index + 1}\tТип: {self.type}")
         self.text_label.config(text=self.current_q.text)
-        self.first_option.config(text=textwrap.fill(self.current_q.options[1], 30))
-        self.second_option.config(text=textwrap.fill(self.current_q.options[2], 30))
-        self.third_option.config(text=textwrap.fill(self.current_q.options[3], 30))
+        self.first_option.config(text=textwrap.fill(self.current_q.options[1], 45))
+        self.second_option.config(text=textwrap.fill(self.current_q.options[2], 45))
+        self.third_option.config(text=textwrap.fill(self.current_q.options[3], 45))
         if self.index >= (self.len - 1):
             self.next_q_btn.config(text="Закончить тестирование", command=self.__stop_test)
-        self.__update_width()
+        self.__update_width_and_height()
 
     def __is_correct_answer(self):
         if self.current_q.is_correct_answer(self.option.get()):
